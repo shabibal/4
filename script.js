@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ===== التهيئة =====
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqMgpu-HDREaLDhtDBjsbalBnGKInQ9pvfRru7RwqF-OeBxO66GoSFCI1drLp2s8ziCA/exec';
+    const SCRIPT_URL = 'https://docs.google.com/spreadsheets/d/1eNwXAmrzbNUfgt7gUCpgPW-vZ-BeLmTyedcNP-iTpb8/edit?usp=sharing';
     const ADMIN_EMAIL = "msdfrrt@gmail.com";
     const INSTAGRAM_URL = "https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr";
     
