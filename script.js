@@ -1,23 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ===== التهيئة =====
-    const SCRIPT_URL = 'https://docs.google.com/spreadsheets/d/1eNwXAmrzbNUfgt7gUCpgPW-vZ-BeLmTyedcNP-iTpb8/edit?usp=sharing';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqMgpu-HDREaLDhtDBjsbalBnGKInQ9pvfRru7RwqF-OeBxO66GoSFCI1drLp2s8ziCA/exec';
     const ADMIN_EMAIL = "msdfrrt@gmail.com";
     const INSTAGRAM_URL = "https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr";
+    const SUPPORT_PHONE = "+96895873061";
     
     // ===== المتغيرات العالمية =====
     let currentUser = null;
     let isAdmin = false;
     let allProducts = [];
     let allUsers = [];
+    let userProductsCount = {};
     
     // ===== عناصر DOM الرئيسية =====
     const elements = {
         mainNav: document.getElementById('main-nav'),
         productsView: document.getElementById('products-view'),
-        authView: document.getElementById('auth-view'),
         adminPanel: document.getElementById('admin-panel'),
-        loginForm: document.getElementById('login-form'),
-        registerForm: document.getElementById('register-form'),
         productsContainer: document.getElementById('products-container'),
         businessAlert: document.getElementById('business-activation-alert'),
         closeBusinessAlert: document.getElementById('close-business-alert'),
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         priceRange: document.getElementById('price-range'),
         priceValue: document.getElementById('price-value'),
         floatAddProduct: document.getElementById('float-add-product'),
-        floatWhatsapp: document.getElementById('float-whatsapp'),
         adminProductsContainer: document.getElementById('admin-products-container'),
         accountsTableBody: document.getElementById('accounts-table-body'),
         merchantsTableBody: document.getElementById('merchants-table-body'),
@@ -33,7 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
         userProductModal: document.getElementById('user-product-modal'),
         productDetailsModal: document.getElementById('product-details-modal'),
         contactAdminModal: document.getElementById('contact-admin-modal'),
-        publishProductLink: document.getElementById('publish-product-link')
+        registerModal: document.getElementById('register-modal'),
+        loginModal: document.getElementById('login-modal'),
+        registerFormModal: document.getElementById('register-form-modal'),
+        loginFormModal: document.getElementById('login-form-modal'),
+        publishProductLink: document.querySelector('.publish-product-link'),
+        homeLink: document.querySelector('.home-link'),
+        allProductsLink: document.querySelector('.all-products-link'),
+        contactLink: document.querySelector('.contact-link')
     };
     
     // ===== دالة الاتصال الرئيسية =====
@@ -93,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ===== دوال العرض والتنقل =====
     function showView(viewId) {
-        const views = ['products-view', 'auth-view', 'admin-panel'];
+        const views = ['products-view', 'admin-panel'];
         views.forEach(view => {
             const element = document.getElementById(view);
             if (element) element.classList.add('hidden');
@@ -118,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updatePageTitle(viewId) {
         const titles = {
             'products-view': 'المنتجات - WebAidea عُمان',
-            'auth-view': 'تسجيل الدخول - WebAidea عُمان',
             'admin-panel': 'لوحة التحكم - WebAidea عُمان'
         };
         
@@ -182,8 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupAdminPanel();
             });
             
-            if (loginBtn) loginBtn.addEventListener('click', showLoginForm);
-            if (registerBtn) registerBtn.addEventListener('click', showRegisterForm);
+            if (loginBtn) loginBtn.addEventListener('click', showLoginModal);
+            if (registerBtn) registerBtn.addEventListener('click', showRegisterModal);
             if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
             if (postProductBtn) postProductBtn.addEventListener('click', showUserProductForm);
             if (requestPublishBtn) requestPublishBtn.addEventListener('click', showContactAdminModal);
@@ -199,6 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.status === 'success') {
                 allProducts = data.products || [];
+                
+                // حساب عدد منتجات كل مستخدم
+                userProductsCount = {};
+                allProducts.forEach(product => {
+                    if (product.postedBy) {
+                        userProductsCount[product.postedBy] = (userProductsCount[product.postedBy] || 0) + 1;
+                    }
+                });
+                
                 displayProducts(allProducts);
                 setupProductFilters();
             } else {
@@ -232,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </button>
                         `}
                     ` : `
-                        <button class="btn btn-primary" onclick="showRegisterForm()">
+                        <button class="btn btn-primary" onclick="showRegisterModal()">
                             <i class="fas fa-user-plus"></i> إنشاء حساب للنشر
                         </button>
                     `}
@@ -434,31 +447,131 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
     
-    // ===== نماذج المستخدم =====
-    function showLoginForm() {
-        showView('auth-view');
-        document.getElementById('login-form').classList.remove('hidden');
-        document.getElementById('register-form').classList.add('hidden');
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('show-login').classList.add('active');
+    // ===== نافذة انشاء حساب =====
+    function showRegisterModal() {
+        const modal = elements.registerModal;
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        
+        // إغلاق النافذة
+        const closeBtn = modal.querySelector('.close-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+        }
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+        
+        // التحويل إلى تسجيل الدخول
+        const switchToLogin = document.getElementById('switch-to-login-modal');
+        if (switchToLogin) {
+            switchToLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                modal.classList.add('hidden');
+                showLoginModal();
+            });
+        }
     }
     
-    function showRegisterForm() {
-        showView('auth-view');
-        document.getElementById('register-form').classList.remove('hidden');
-        document.getElementById('login-form').classList.add('hidden');
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('show-register').classList.add('active');
+    // ===== نافذة تسجيل الدخول =====
+    function showLoginModal() {
+        const modal = elements.loginModal;
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        
+        // إغلاق النافذة
+        const closeBtn = modal.querySelector('.close-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+        }
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+        
+        // التحويل إلى انشاء حساب
+        const switchToRegister = document.getElementById('switch-to-register-modal');
+        if (switchToRegister) {
+            switchToRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                modal.classList.add('hidden');
+                showRegisterModal();
+            });
+        }
     }
     
-    // تسجيل الدخول
-    if (elements.loginForm) {
-        elements.loginForm.addEventListener('submit', async (e) => {
+    // ===== عرض نافذة التواصل مع الإدارة =====
+    function showContactAdminModal() {
+        const modal = elements.contactAdminModal;
+        if (!modal) return;
+        
+        modal.innerHTML = `
+            <div class="modal-content contact-modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> مطلوب تصريح للنشر</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="contact-instructions">
+                        <div class="contact-icon">
+                            <i class="fab fa-instagram" style="font-size: 4rem; color: #E1306C;"></i>
+                        </div>
+                        <h4>لنشر منتجاتك تحتاج إلى تصريح من الإدارة</h4>
+                        <p>يرجى التواصل معنا عبر حساب Instagram للحصول على تصريح النشر:</p>
+                        <div class="contact-link">
+                            <a href="${INSTAGRAM_URL}" 
+                               target="_blank" class="btn btn-instagram">
+                                <i class="fab fa-instagram"></i> تواصل معنا على Instagram
+                            </a>
+                        </div>
+                        <p class="contact-note">بعد التواصل وموافقة الإدارة، ستتمكن من نشر منتجاتك على المنصة</p>
+                        <div class="user-info">
+                            <p><strong>اسم المستخدم:</strong> ${currentUser?.name || ''}</p>
+                            <p><strong>البريد الإلكتروني:</strong> ${currentUser?.email || ''}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // إضافة مستمعي الأحداث
+        setTimeout(() => {
+            const closeBtn = modal.querySelector('.close-modal');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                });
+            }
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        }, 100);
+        
+        modal.classList.remove('hidden');
+    }
+    
+    // ===== تسجيل الدخول =====
+    if (elements.loginFormModal) {
+        elements.loginFormModal.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-            const btn = elements.loginForm.querySelector('button[type="submit"]');
+            const email = document.getElementById('login-email-modal').value.trim();
+            const password = document.getElementById('login-password-modal').value;
+            const btn = elements.loginFormModal.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
             
             // التحقق من البيانات
@@ -499,7 +612,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAndDisplayProducts();
                     
                     showAlert(`مرحباً بعودتك ${currentUser.name}!`, 'success');
-                    elements.loginForm.reset();
+                    elements.loginFormModal.reset();
+                    
+                    // إغلاق النافذة
+                    elements.loginModal.classList.add('hidden');
                 } else {
                     showAlert(data.message, 'error');
                 }
@@ -513,16 +629,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // إنشاء حساب (مبسط)
-    if (elements.registerForm) {
-        elements.registerForm.addEventListener('submit', async (e) => {
+    // ===== إنشاء حساب =====
+    if (elements.registerFormModal) {
+        elements.registerFormModal.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const name = document.getElementById('register-name').value.trim();
-            const email = document.getElementById('register-email').value.trim();
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
-            const btn = elements.registerForm.querySelector('button[type="submit"]');
+            const name = document.getElementById('register-name-modal').value.trim();
+            const email = document.getElementById('register-email-modal').value.trim();
+            const password = document.getElementById('register-password-modal').value;
+            const confirmPassword = document.getElementById('register-confirm-password-modal').value;
+            const btn = elements.registerFormModal.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
             
             // التحقق من البيانات
@@ -538,16 +654,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await makeRequest('register', {
                     name,
                     email,
-                    phone: "", // رقم الهاتف غير مطلوب الآن
+                    phone: "",
                     password,
-                    governorate: "", // المحافظة غير مطلوبة الآن
-                    address: "", // العنوان غير مطلوب الآن
+                    governorate: "",
+                    address: "",
                     wantsBusiness: false
                 });
                 
                 if (data.status === 'success') {
                     currentUser = data.user;
-                    currentUser.canPublish = false; // جديد بدون صلاحية نشر
+                    currentUser.canPublish = false;
                     isAdmin = data.isAdmin && currentUser.email === ADMIN_EMAIL;
                     
                     // حفظ في localStorage
@@ -559,7 +675,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAndDisplayProducts();
                     
                     showAlert('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن', 'success');
-                    showLoginForm();
+                    elements.registerFormModal.reset();
+                    
+                    // إغلاق النافذة وفتح نافذة تسجيل الدخول
+                    elements.registerModal.classList.add('hidden');
+                    showLoginModal();
                 } else {
                     showAlert(data.message, 'error');
                 }
@@ -571,59 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.disabled = false;
             }
         });
-    }
-    
-    // ===== عرض نافذة التواصل مع الإدارة =====
-    function showContactAdminModal() {
-        const modal = elements.contactAdminModal;
-        if (!modal) return;
-        
-        modal.innerHTML = `
-            <div class="modal-content contact-modal">
-                <div class="modal-header">
-                    <h3><i class="fas fa-info-circle"></i> مطلوب تصريح للنشر</h3>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="contact-instructions">
-                        <div class="contact-icon">
-                            <i class="fab fa-instagram" style="font-size: 4rem; color: #E1306C;"></i>
-                        </div>
-                        <h4>لنشر منتجاتك تحتاج إلى تصريح من الإدارة</h4>
-                        <p>يرجى التواصل معنا عبر حساب Instagram للحصول على تصريح النشر:</p>
-                        <div class="contact-link">
-                            <a href="${INSTAGRAM_URL}" 
-                               target="_blank" class="btn btn-instagram">
-                                <i class="fab fa-instagram"></i> تواصل معنا على Instagram
-                            </a>
-                        </div>
-                        <p class="contact-note">بعد التواصل وموافقة الإدارة، ستتمكن من نشر منتجاتك على المنصة</p>
-                        <div class="user-info">
-                            <p><strong>اسم المستخدم:</strong> ${currentUser.name}</p>
-                            <p><strong>البريد الإلكتروني:</strong> ${currentUser.email}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // إضافة مستمعي الأحداث
-        setTimeout(() => {
-            const closeBtn = modal.querySelector('.close-modal');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    modal.classList.add('hidden');
-                });
-            }
-            
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.add('hidden');
-                }
-            });
-        }, 100);
-        
-        modal.classList.remove('hidden');
     }
     
     // ===== نموذج نشر المنتج للمستخدمين =====
@@ -832,6 +899,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchUser.addEventListener('input', searchAdminUsers);
             }
             
+            const searchMerchant = document.getElementById('search-merchant');
+            if (searchMerchant) {
+                searchMerchant.addEventListener('input', searchAdminMerchants);
+            }
+            
             // إعداد نموذج إضافة منتج
             if (elements.adminProductForm) {
                 setupAdminProductForm();
@@ -923,17 +995,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteBtn = row.querySelector('.delete-user-btn');
             
             if (approveBtn) {
-                approveBtn.addEventListener('click', () => {
+                approveBtn.addEventListener('click', async () => {
                     if (confirm(`هل تريد منح ${user.name} صلاحية نشر المنتجات؟`)) {
-                        togglePublishPermission(user.email, true);
+                        await togglePublishPermission(user.email, true);
                     }
                 });
             }
             
             if (revokeBtn) {
-                revokeBtn.addEventListener('click', () => {
+                revokeBtn.addEventListener('click', async () => {
                     if (confirm(`هل تريد إلغاء صلاحية النشر من ${user.name}؟`)) {
-                        togglePublishPermission(user.email, false);
+                        await togglePublishPermission(user.email, false);
                     }
                 });
             }
@@ -954,12 +1026,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = document.createElement('tr');
         
         // حساب عدد منتجات المستخدم
-        const userProducts = allProducts.filter(product => product.postedBy === user.email);
+        const userProducts = userProductsCount[user.email] || 0;
         
         row.innerHTML = `
             <td>${user.name}</td>
             <td>${user.email}</td>
-            <td>${userProducts.length}</td>
+            <td>${userProducts}</td>
             <td>${formatDate(user.joinDate)}</td>
             <td class="actions">
                 <button class="btn btn-small btn-warning revoke-publish-btn" data-email="${user.email}">
@@ -971,18 +1043,47 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
         `;
         
+        // إضافة مستمعي الأحداث للأزرار
+        setTimeout(() => {
+            const revokeBtn = row.querySelector('.revoke-publish-btn');
+            const deleteBtn = row.querySelector('.delete-user-btn');
+            
+            if (revokeBtn) {
+                revokeBtn.addEventListener('click', async () => {
+                    if (confirm(`هل تريد إلغاء صلاحية النشر من ${user.name}؟`)) {
+                        await togglePublishPermission(user.email, false);
+                    }
+                });
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm(`هل تريد حذف حساب ${user.name}؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+                        deleteUser(user.email);
+                    }
+                });
+            }
+        }, 100);
+        
         return row;
     }
     
     async function togglePublishPermission(email, canPublish) {
         try {
-            // في الحقيقة، نحتاج إلى دالة جديدة في Google Apps Script
-            // لكن هنا سنستخدم toggleMerchantStatus الموجود
             const data = await makeRequest('toggleMerchantStatus', { email });
             
             if (data.status === 'success') {
                 showAlert(canPublish ? 'تم منح صلاحية النشر' : 'تم إلغاء صلاحية النشر', 'success');
-                setupAdminPanel(); // تحديث البيانات
+                
+                // تحديث حالة المستخدم الحالي إذا كان هو نفسه
+                if (currentUser && currentUser.email === email) {
+                    currentUser.canPublish = canPublish;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    updateNavbar();
+                }
+                
+                // إعادة تحميل لوحة التحكم
+                setupAdminPanel();
             } else {
                 showAlert(data.message, 'error');
             }
@@ -994,9 +1095,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function deleteUser(email) {
         try {
-            // هنا تحتاج إلى دالة حذف في Google Apps Script
-            // سنضيفها لاحقاً
-            showAlert('ميزة حذف الحساب تحت التطوير', 'info');
+            const data = await makeRequest('deleteUser', { email });
+            
+            if (data.status === 'success') {
+                showAlert('تم حذف الحساب بنجاح', 'success');
+                setupAdminPanel(); // تحديث البيانات
+                fetchAndDisplayProducts(); // تحديث المنتجات
+            } else {
+                showAlert(data.message, 'error');
+            }
         } catch (error) {
             console.error('❌ Error deleting user:', error);
             showAlert('حدث خطأ أثناء حذف الحساب', 'error');
@@ -1006,11 +1113,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteProduct(productId) {
         try {
             if (confirm('هل تريد حذف هذا المنتج؟ هذا الإجراء لا يمكن التراجع عنه.')) {
-                // هنا تحتاج إلى دالة حذف منتج في Google Apps Script
-                // سنضيفها لاحقاً
-                showAlert('تم حذف المنتج', 'success');
-                setupAdminPanel(); // تحديث البيانات
-                fetchAndDisplayProducts(); // تحديث المنتجات
+                const data = await makeRequest('deleteProduct', { productId });
+                
+                if (data.status === 'success') {
+                    showAlert('تم حذف المنتج بنجاح', 'success');
+                    setupAdminPanel(); // تحديث البيانات
+                    fetchAndDisplayProducts(); // تحديث المنتجات
+                } else {
+                    showAlert(data.message, 'error');
+                }
             }
         } catch (error) {
             console.error('❌ Error deleting product:', error);
@@ -1021,6 +1132,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function searchAdminUsers() {
         const searchTerm = document.getElementById('search-user').value.toLowerCase();
         const rows = elements.accountsTableBody.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let shouldShow = false;
+            
+            cells.forEach(cell => {
+                if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                    shouldShow = true;
+                }
+            });
+            
+            row.style.display = shouldShow ? '' : 'none';
+        });
+    }
+    
+    function searchAdminMerchants() {
+        const searchTerm = document.getElementById('search-merchant').value.toLowerCase();
+        const rows = elements.merchantsTableBody.querySelectorAll('tr');
         
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
@@ -1146,6 +1275,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // إظهار العرض المطلوب
                 tabViews.forEach(view => view.classList.add('hidden'));
                 document.getElementById(targetView).classList.remove('hidden');
+                
+                // عند النقر على "المصرح لهم" نقوم بتحديث الجدول
+                if (targetView === 'merchants-view') {
+                    setupAdminPanel();
+                }
             });
         });
     }
@@ -1154,7 +1288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.adminProductForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(elements.adminProductForm);
             const productData = {
                 productName: document.getElementById('admin-product-name').value.trim(),
                 category: document.getElementById('admin-product-category').value,
@@ -1225,11 +1358,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function validateEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
-    }
-    
-    function validatePhone(phone) {
-        const re = /^[0-9]{8}$/;
-        return re.test(phone);
     }
     
     function validateRegistration(name, email, password, confirmPassword) {
@@ -1318,7 +1446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const diffMs = now - date;
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             
-            return diffDays <= 7; // منتج جديد إذا كان منشوراً خلال أسبوع
+            return diffDays <= 7;
         } catch (error) {
             return false;
         }
@@ -1358,10 +1486,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const alert = document.createElement('div');
         alert.className = `alert-message alert-${type}`;
         alert.innerHTML = `
-            <div class="alert-content" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${type === 'success' ? '#2A9D8F' : type === 'error' ? '#DB1F2A' : '#3A86FF'}; color: white; padding: 15px 25px; border-radius: var(--border-radius); box-shadow: var(--shadow-lg); z-index: 2000; display: flex; align-items: center; gap: 15px; max-width: 500px; animation: slideDown 0.3s ease;">
+            <div class="alert-content">
                 <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
                 <span>${message}</span>
-                <button class="close-alert" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; margin-right: auto;">&times;</button>
+                <button class="close-alert">&times;</button>
             </div>
         `;
         
@@ -1397,6 +1525,33 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('تم تسجيل الخروج بنجاح', 'success');
     }
     
+    // ===== إدارة مفاتيح إظهار/إخفاء كلمة المرور =====
+    function setupPasswordToggles() {
+        // تسجيل الدخول
+        const toggleLoginPassword = document.getElementById('toggle-login-password-modal');
+        if (toggleLoginPassword) {
+            toggleLoginPassword.addEventListener('click', function() {
+                const input = document.getElementById('login-password-modal');
+                const type = input.type === 'password' ? 'text' : 'password';
+                input.type = type;
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        }
+        
+        // انشاء حساب
+        const toggleRegisterPassword = document.getElementById('toggle-register-password-modal');
+        if (toggleRegisterPassword) {
+            toggleRegisterPassword.addEventListener('click', function() {
+                const input = document.getElementById('register-password-modal');
+                const type = input.type === 'password' ? 'text' : 'password';
+                input.type = type;
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        }
+    }
+    
     // ===== تهيئة التطبيق =====
     function initializeApp() {
         console.log('🚀 بدء تشغيل WebAidea عُمان...');
@@ -1413,6 +1568,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // إعداد مستمعي الأحداث العامة
         setupEventListeners();
         
+        // إعداد مفاتيح كلمات المرور
+        setupPasswordToggles();
+        
         // تحديث الواجهة
         updateNavbar();
         showView('products-view');
@@ -1425,23 +1583,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupEventListeners() {
-        // تبديل نماذج الدخول/التسجيل
-        const showLoginBtn = document.getElementById('show-login');
-        const showRegisterBtn = document.getElementById('show-register');
-        const switchToLogin = document.getElementById('switch-to-login');
-        
-        if (showLoginBtn) {
-            showLoginBtn.addEventListener('click', showLoginForm);
-        }
-        
-        if (showRegisterBtn) {
-            showRegisterBtn.addEventListener('click', showRegisterForm);
-        }
-        
-        if (switchToLogin) {
-            switchToLogin.addEventListener('click', showLoginForm);
-        }
-        
         // إغلاق تنبيه Business
         if (elements.closeBusinessAlert) {
             elements.closeBusinessAlert.addEventListener('click', () => {
@@ -1450,35 +1591,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // مفاتيح إظهار/إخفاء كلمة المرور
-        const toggleLoginPassword = document.getElementById('toggle-login-password');
-        const toggleRegisterPassword = document.getElementById('toggle-register-password');
-        
-        if (toggleLoginPassword) {
-            toggleLoginPassword.addEventListener('click', function() {
-                const input = document.getElementById('login-password');
-                const type = input.type === 'password' ? 'text' : 'password';
-                input.type = type;
-                this.classList.toggle('fa-eye');
-                this.classList.toggle('fa-eye-slash');
-            });
-        }
-        
-        if (toggleRegisterPassword) {
-            toggleRegisterPassword.addEventListener('click', function() {
-                const input = document.getElementById('register-password');
-                const type = input.type === 'password' ? 'text' : 'password';
-                input.type = type;
-                this.classList.toggle('fa-eye');
-                this.classList.toggle('fa-eye-slash');
-            });
-        }
-        
         // الأزرار العائمة
         if (elements.floatAddProduct) {
             elements.floatAddProduct.addEventListener('click', () => {
                 if (!currentUser) {
-                    showRegisterForm();
+                    showRegisterModal();
                 } else if (!currentUser.canPublish) {
                     showContactAdminModal();
                 } else {
@@ -1487,17 +1604,39 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // رابط نشر منتج في الفوتر
+        // روابط الفوتر
         if (elements.publishProductLink) {
             elements.publishProductLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (!currentUser) {
-                    showRegisterForm();
+                    showRegisterModal();
                 } else if (!currentUser.canPublish) {
                     showContactAdminModal();
                 } else {
                     showUserProductForm();
                 }
+            });
+        }
+        
+        if (elements.homeLink) {
+            elements.homeLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView('products-view');
+            });
+        }
+        
+        if (elements.allProductsLink) {
+            elements.allProductsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView('products-view');
+                fetchAndDisplayProducts();
+            });
+        }
+        
+        if (elements.contactLink) {
+            elements.contactLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.open(`https://wa.me/${SUPPORT_PHONE}`, '_blank');
             });
         }
     }
@@ -1515,6 +1654,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.fetchAndDisplayProducts = fetchAndDisplayProducts;
     window.showUserProductForm = showUserProductForm;
     window.showContactAdminModal = showContactAdminModal;
+    window.showRegisterModal = showRegisterModal;
+    window.showLoginModal = showLoginModal;
     
     // بدء التطبيق
     initializeApp();

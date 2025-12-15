@@ -11,14 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- شعار عماني -->
-    <div class="omani-flag">
-        <div class="flag-red"></div>
-        <div class="flag-white">
-            <div class="flag-symbol">🇴🇲</div>
-        </div>
-        <div class="flag-green"></div>
-    </div>
+    <!-- تم إزالة العلم العماني -->
 
     <header>
         <div class="container">
@@ -38,9 +31,112 @@
             <i class="fas fa-crown"></i>
             <div>
                 <h4>تفعيل حساب Business</h4>
-                <p>لتفعيل حسابك كتاجر والحصول على مميزات خاصة، تواصل معنا على <strong>واتساب: +968 1234 5678</strong></p>
+                <p>لتفعيل حسابك كتاجر والحصول على مميزات خاصة، تواصل معنا على <strong>واتساب: +968 95873061</strong></p>
             </div>
             <button class="close-alert-btn" id="close-business-alert">&times;</button>
+        </div>
+    </div>
+
+    <!-- نافذة انشاء حساب -->
+    <div id="register-modal" class="modal-overlay hidden">
+        <div class="modal-content register-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="register-form-modal">
+                    <div class="form-group">
+                        <label for="register-name-modal">
+                            <i class="fas fa-user"></i> الاسم الكامل *
+                        </label>
+                        <input type="text" id="register-name-modal" placeholder="أحمد محمد" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-email-modal">
+                            <i class="fas fa-envelope"></i> البريد الإلكتروني *
+                        </label>
+                        <input type="email" id="register-email-modal" placeholder="example@email.com" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="register-password-modal">
+                                <i class="fas fa-lock"></i> كلمة المرور *
+                            </label>
+                            <input type="password" id="register-password-modal" placeholder="6 أحرف على الأقل" 
+                                   minlength="6" required>
+                            <div class="password-toggle">
+                                <i class="fas fa-eye" id="toggle-register-password-modal"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="register-confirm-password-modal">
+                                <i class="fas fa-lock"></i> تأكيد كلمة المرور *
+                            </label>
+                            <input type="password" id="register-confirm-password-modal" 
+                                   placeholder="أعد إدخال كلمة المرور" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agree-terms-modal" required>
+                            <span>أوافق على <a href="#" class="terms-link">الشروط والأحكام</a></span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-user-plus"></i> إنشاء حساب جديد
+                        </button>
+                    </div>
+                    
+                    <p class="login-link">
+                        لديك حساب بالفعل؟ <a href="#" id="switch-to-login-modal">سجل الدخول هنا</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تسجيل الدخول -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal-content login-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="login-form-modal">
+                    <div class="form-group">
+                        <label for="login-email-modal">
+                            <i class="fas fa-envelope"></i> البريد الإلكتروني
+                        </label>
+                        <input type="email" id="login-email-modal" placeholder="example@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password-modal">
+                            <i class="fas fa-lock"></i> كلمة المرور
+                        </label>
+                        <input type="password" id="login-password-modal" placeholder="********" required>
+                        <div class="password-toggle">
+                            <i class="fas fa-eye" id="toggle-login-password-modal"></i>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                    </button>
+                    
+                    <p class="login-link">
+                        ليس لديك حساب؟ <a href="#" id="switch-to-register-modal">إنشاء حساب جديد</a>
+                    </p>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -96,110 +192,6 @@
             </div>
         </section>
 
-        <!-- قسم التسجيل -->
-        <section id="auth-view" class="hidden">
-            <div class="form-container omani-form">
-                <div class="form-header">
-                    <h2><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h2>
-                    <p class="form-subtitle">انضم إلى أكبر منصة تجارية في عُمان</p>
-                </div>
-                
-                <div class="form-tabs">
-                    <button id="show-login" class="tab-btn">
-                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-                    </button>
-                    <button id="show-register" class="tab-btn active">
-                        <i class="fas fa-user-plus"></i> إنشاء حساب
-                    </button>
-                </div>
-                
-                <!-- نموذج تسجيل الدخول -->
-                <form id="login-form" class="auth-form hidden">
-                    <div class="form-group">
-                        <label for="login-email">
-                            <i class="fas fa-envelope"></i> البريد الإلكتروني
-                        </label>
-                        <input type="email" id="login-email" placeholder="example@email.com" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="login-password">
-                            <i class="fas fa-lock"></i> كلمة المرور
-                        </label>
-                        <input type="password" id="login-password" placeholder="********" required>
-                        <div class="password-toggle">
-                            <i class="fas fa-eye" id="toggle-login-password"></i>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-large">
-                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-                    </button>
-                    
-                    <div class="divider">
-                        <span>أو</span>
-                    </div>
-                    
-                    <button type="button" class="btn btn-outline">
-                        <i class="fab fa-google"></i> تسجيل الدخول بحساب Google
-                    </button>
-                </form>
-
-                <!-- نموذج إنشاء حساب (مبسط) -->
-                <form id="register-form" class="auth-form">
-                    <div class="form-group">
-                        <label for="register-name">
-                            <i class="fas fa-user"></i> الاسم الكامل *
-                        </label>
-                        <input type="text" id="register-name" placeholder="أحمد محمد" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="register-email">
-                            <i class="fas fa-envelope"></i> البريد الإلكتروني *
-                        </label>
-                        <input type="email" id="register-email" placeholder="example@email.com" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="register-password">
-                                <i class="fas fa-lock"></i> كلمة المرور *
-                            </label>
-                            <input type="password" id="register-password" placeholder="6 أحرف على الأقل" 
-                                   minlength="6" required>
-                            <div class="password-toggle">
-                                <i class="fas fa-eye" id="toggle-register-password"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="register-confirm-password">
-                                <i class="fas fa-lock"></i> تأكيد كلمة المرور *
-                            </label>
-                            <input type="password" id="register-confirm-password" 
-                                   placeholder="أعد إدخال كلمة المرور" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="agree-terms" required>
-                            <span>أوافق على <a href="#" class="terms-link">الشروط والأحكام</a> و <a href="#" class="terms-link">سياسة الخصوصية</a></span>
-                        </label>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-large btn-block">
-                        <i class="fas fa-user-plus"></i> إنشاء حساب جديد
-                    </button>
-                    
-                    <p class="login-link">
-                        لديك حساب بالفعل؟ <a href="#" id="switch-to-login">سجل الدخول هنا</a>
-                    </p>
-                </form>
-            </div>
-        </section>
-
         <!-- لوحة المدير -->
         <section id="admin-panel" class="hidden">
             <div class="admin-header">
@@ -231,7 +223,7 @@
             
             <div class="admin-nav">
                 <button data-view="accounts-view" class="active">
-                    <i class="fas fa-users"></i> الحسابات
+                    <i class="fas fa-users"></i> جميع الحسابات
                 </button>
                 <button data-view="merchants-view">
                     <i class="fas fa-store"></i> المصرح لهم
@@ -274,7 +266,13 @@
 
                 <!-- عرض المصرح لهم بالنشر -->
                 <div id="merchants-view" class="admin-sub-view hidden">
-                    <h3><i class="fas fa-store"></i> المصرح لهم بالنشر</h3>
+                    <div class="admin-sub-header">
+                        <h3><i class="fas fa-store"></i> المصرح لهم بالنشر</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-merchant" placeholder="بحث باسم أو بريد...">
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
@@ -458,6 +456,10 @@
                             </a>
                         </div>
                         <p class="contact-note">بعد التواصل وموافقة الإدارة، ستتمكن من نشر منتجاتك على المنصة</p>
+                        <div class="user-info">
+                            <p><strong>اسم المستخدم:</strong> ${currentUser?.name || ''}</p>
+                            <p><strong>البريد الإلكتروني:</strong> ${currentUser?.email || ''}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -472,29 +474,27 @@
                     <h4><i class="fas fa-store"></i> WebAidea عُمان</h4>
                     <p>منصة البيع والشراء الأولى في سلطنة عُمان</p>
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://wa.me/96895873061" target="_blank"><i class="fab fa-whatsapp"></i></a>
                         <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" target="_blank">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
                     </div>
                 </div>
                 
                 <div class="footer-section">
                     <h4>روابط سريعة</h4>
                     <ul>
-                        <li><a href="#"><i class="fas fa-home"></i> الرئيسية</a></li>
-                        <li><a href="#"><i class="fas fa-box"></i> جميع المنتجات</a></li>
-                        <li><a href="#" id="publish-product-link"><i class="fas fa-plus-circle"></i> نشر منتج</a></li>
-                        <li><a href="#"><i class="fas fa-question-circle"></i> المساعدة</a></li>
+                        <li><a href="#" class="home-link"><i class="fas fa-home"></i> الرئيسية</a></li>
+                        <li><a href="#" class="all-products-link"><i class="fas fa-box"></i> جميع المنتجات</a></li>
+                        <li><a href="#" class="publish-product-link"><i class="fas fa-plus-circle"></i> نشر منتج</a></li>
+                        <li><a href="#" class="contact-link"><i class="fas fa-question-circle"></i> المساعدة</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>الدعم</h4>
                     <ul>
-                        <li><i class="fas fa-phone"></i> +968 1234 5678</li>
-                        <li><i class="fas fa-envelope"></i> support@webaidea.com</li>
+                        <li><i class="fas fa-phone"></i> +968 95873061</li>
                         <li><i class="fas fa-clock"></i> من 8 صباحاً إلى 8 مساءً</li>
                     </ul>
                 </div>
@@ -503,7 +503,6 @@
             <div class="footer-bottom">
                 <p>جميع الحقوق محفوظة &copy; 2024 WebAidea عُمان</p>
                 <div class="footer-links">
-                    <a href="#">سياسة الخصوصية</a> | 
                     <a href="#">الشروط والأحكام</a> | 
                     <a href="#">اتصل بنا</a>
                 </div>
@@ -517,9 +516,9 @@
             <i class="fas fa-plus"></i>
             <span>نشر منتج</span>
         </button>
-        <button class="floating-btn btn-whatsapp" id="float-whatsapp">
+        <a href="https://wa.me/96895873061" target="_blank" class="floating-btn btn-whatsapp">
             <i class="fab fa-whatsapp"></i>
-        </button>
+        </a>
     </div>
 
     <script src="script.js"></script>
