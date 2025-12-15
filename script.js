@@ -2,14 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== التهيئة =====
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqMgpu-HDREaLDhtDBjsbalBnGKInQ9pvfRru7RwqF-OeBxO66GoSFCI1drLp2s8ziCA/exec';
     const ADMIN_EMAIL = "msdfrrt@gmail.com";
-    const WHATSAPP_NUMBER = "+96812345678";
+    const INSTAGRAM_URL = "https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr";
     
     // ===== المتغيرات العالمية =====
     let currentUser = null;
     let isAdmin = false;
     let allProducts = [];
     let allUsers = [];
-    let uploadedImages = [];
     
     // ===== عناصر DOM الرئيسية =====
     const elements = {
@@ -30,10 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
         adminProductsContainer: document.getElementById('admin-products-container'),
         accountsTableBody: document.getElementById('accounts-table-body'),
         merchantsTableBody: document.getElementById('merchants-table-body'),
-        businessRequestsBody: document.getElementById('business-requests-body'),
         adminProductForm: document.getElementById('admin-product-form'),
         userProductModal: document.getElementById('user-product-modal'),
-        productDetailsModal: document.getElementById('product-details-modal')
+        productDetailsModal: document.getElementById('product-details-modal'),
+        contactAdminModal: document.getElementById('contact-admin-modal'),
+        publishProductLink: document.getElementById('publish-product-link')
     };
     
     // ===== دالة الاتصال الرئيسية =====
@@ -142,11 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="welcome-msg">
                     <i class="fas fa-user"></i> ${currentUser.name}
                 </span>
-                ${currentUser.isMerchant ? `
+                ${currentUser.canPublish ? `
                     <button id="post-product-btn" class="nav-btn">
                         <i class="fas fa-plus"></i> نشر منتج
                     </button>
-                ` : ''}
+                ` : `
+                    <button id="request-publish-btn" class="nav-btn">
+                        <i class="fas fa-plus"></i> طلب تصريح نشر
+                    </button>
+                `}
                 <button id="logout-btn" class="nav-btn">
                     <i class="fas fa-sign-out-alt"></i> تسجيل خروج
                 </button>
@@ -171,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const registerBtn = document.getElementById('register-btn');
             const logoutBtn = document.getElementById('logout-btn');
             const postProductBtn = document.getElementById('post-product-btn');
+            const requestPublishBtn = document.getElementById('request-publish-btn');
             
             if (adminPanelBtn) adminPanelBtn.addEventListener('click', () => {
                 showView('admin-panel');
@@ -181,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (registerBtn) registerBtn.addEventListener('click', showRegisterForm);
             if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
             if (postProductBtn) postProductBtn.addEventListener('click', showUserProductForm);
+            if (requestPublishBtn) requestPublishBtn.addEventListener('click', showContactAdminModal);
         }, 100);
     }
     
@@ -215,11 +221,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fas fa-box-open"></i>
                     <h3>لا توجد منتجات حالياً</h3>
                     <p>كن أول من ينشر منتجاً!</p>
-                    ${currentUser && currentUser.isMerchant ? `
-                        <button class="btn btn-primary" onclick="showUserProductForm()">
-                            <i class="fas fa-plus"></i> نشر منتج جديد
+                    ${currentUser ? `
+                        ${currentUser.canPublish ? `
+                            <button class="btn btn-primary" onclick="showUserProductForm()">
+                                <i class="fas fa-plus"></i> نشر منتج جديد
+                            </button>
+                        ` : `
+                            <button class="btn btn-primary" onclick="showContactAdminModal()">
+                                <i class="fas fa-plus"></i> طلب تصريح للنشر
+                            </button>
+                        `}
+                    ` : `
+                        <button class="btn btn-primary" onclick="showRegisterForm()">
+                            <i class="fas fa-user-plus"></i> إنشاء حساب للنشر
                         </button>
-                    ` : ''}
+                    `}
                 </div>
             `;
             return;
@@ -267,9 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="product-description">${product.description}</p>
                 
                 <div class="product-meta">
-                    <div class="product-location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${product.location || 'غير محدد'}</span>
+                    <div class="product-seller">
+                        <i class="fas fa-user"></i>
+                        <span>${product.postedByName || product.postedBy}</span>
                     </div>
                     
                     <div class="product-date">
@@ -361,17 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="product-info">
                         <div class="price-section">
                             <span class="price">${price}</span>
-                            ${product.negotiable ? '<span class="negotiable-badge">قابل للتفاوض</span>' : ''}
-                        </div>
-                        
-                        <div class="product-category">
-                            <i class="fas fa-tag"></i>
-                            <span>${product.category || 'غير محدد'}</span>
-                        </div>
-                        
-                        <div class="product-condition">
-                            <i class="fas fa-certificate"></i>
-                            <span>${getConditionText(product.condition)}</span>
                         </div>
                         
                         <div class="product-description-full">
@@ -386,31 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <i class="fas fa-user"></i>
                                     <span>${product.postedByName || product.postedBy}</span>
                                 </div>
-                                
-                                <div class="seller-phone">
-                                    <i class="fas fa-phone"></i>
-                                    <span>${product.phone || 'غير متوفر'}</span>
-                                </div>
-                                
-                                <div class="seller-location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span>${product.location || 'غير محدد'}</span>
-                                </div>
-                                
-                                <div class="seller-date">
-                                    <i class="fas fa-calendar"></i>
-                                    <span>${formatDate(product.datePosted)}</span>
-                                </div>
                             </div>
                         </div>
                         
                         <div class="product-actions">
-                            <button class="btn btn-whatsapp btn-block" id="whatsapp-contact">
-                                <i class="fab fa-whatsapp"></i> تواصل عبر واتساب
-                            </button>
-                            
-                            <button class="btn btn-primary btn-block" id="call-contact">
-                                <i class="fas fa-phone"></i> الاتصال
+                            <button class="btn btn-primary btn-block" id="whatsapp-contact">
+                                <i class="fab fa-whatsapp"></i> تواصل مع البائع
                             </button>
                         </div>
                     </div>
@@ -421,19 +407,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // إضافة مستمعي الأحداث لأزرار الاتصال
         setTimeout(() => {
             const whatsappBtn = document.getElementById('whatsapp-contact');
-            const callBtn = document.getElementById('call-contact');
             
             if (whatsappBtn && product.phone) {
                 whatsappBtn.addEventListener('click', () => {
                     const message = `مرحباً، أنا مهتم بالمنتج: ${product.name}`;
                     const whatsappUrl = `https://wa.me/${product.phone}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
-                });
-            }
-            
-            if (callBtn && product.phone) {
-                callBtn.addEventListener('click', () => {
-                    window.location.href = `tel:${product.phone}`;
                 });
             }
             
@@ -504,6 +483,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentUser = data.user;
                     isAdmin = data.isAdmin && currentUser.email === ADMIN_EMAIL;
                     
+                    // إضافة خاصية canPublish من بيانات الجدول
+                    if (data.userData && data.userData.canPublish !== undefined) {
+                        currentUser.canPublish = data.userData.canPublish;
+                    } else {
+                        currentUser.canPublish = false;
+                    }
+                    
                     // حفظ في localStorage
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     localStorage.setItem('isAdmin', isAdmin.toString());
@@ -527,24 +513,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // إنشاء حساب
+    // إنشاء حساب (مبسط)
     if (elements.registerForm) {
         elements.registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const name = document.getElementById('register-name').value.trim();
             const email = document.getElementById('register-email').value.trim();
-            const phone = document.getElementById('register-phone').value.trim();
-            const governorate = document.getElementById('register-governorate').value;
-            const address = document.getElementById('register-address').value.trim();
             const password = document.getElementById('register-password').value;
             const confirmPassword = document.getElementById('register-confirm-password').value;
-            const businessAccount = document.getElementById('business-account').checked;
             const btn = elements.registerForm.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
             
             // التحقق من البيانات
-            if (!validateRegistration(name, email, phone, password, confirmPassword, governorate)) {
+            if (!validateRegistration(name, email, password, confirmPassword)) {
                 return;
             }
             
@@ -556,15 +538,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await makeRequest('register', {
                     name,
                     email,
-                    phone,
+                    phone: "", // رقم الهاتف غير مطلوب الآن
                     password,
-                    governorate,
-                    address,
-                    wantsBusiness: businessAccount
+                    governorate: "", // المحافظة غير مطلوبة الآن
+                    address: "", // العنوان غير مطلوب الآن
+                    wantsBusiness: false
                 });
                 
                 if (data.status === 'success') {
                     currentUser = data.user;
+                    currentUser.canPublish = false; // جديد بدون صلاحية نشر
                     isAdmin = data.isAdmin && currentUser.email === ADMIN_EMAIL;
                     
                     // حفظ في localStorage
@@ -575,13 +558,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     showView('products-view');
                     fetchAndDisplayProducts();
                     
-                    showAlert(data.message, 'success');
-                    elements.registerForm.reset();
-                    
-                    // إظهار تنبيه Business إذا تم اختياره
-                    if (businessAccount) {
-                        showBusinessAlert();
-                    }
+                    showAlert('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن', 'success');
+                    showLoginForm();
                 } else {
                     showAlert(data.message, 'error');
                 }
@@ -595,292 +573,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // ===== لوحة التحكم =====
-    async function setupAdminPanel() {
-        try {
-            // تحميل البيانات
-            const [usersData, productsData] = await Promise.all([
-                makeRequest('getAllUsers'),
-                makeRequest('getAllProducts')
-            ]);
-            
-            if (usersData.status === 'success') {
-                allUsers = usersData.users || [];
-                displayAdminUsers(allUsers);
-                updateAdminStats(allUsers, productsData.products || []);
-            }
-            
-            if (productsData.status === 'success') {
-                displayAdminProducts(productsData.products || []);
-            }
-            
-            // إعداد علامات التبويب
-            setupAdminTabs();
-            
-            // إعداد البحث
-            if (elements.searchUser) {
-                elements.searchUser.addEventListener('input', searchAdminUsers);
-            }
-            
-            // إعداد نموذج إضافة منتج
-            if (elements.adminProductForm) {
-                setupAdminProductForm();
-            }
-            
-        } catch (error) {
-            console.error('❌ Error setting up admin panel:', error);
-            showAlert('حدث خطأ في تحميل بيانات لوحة التحكم', 'error');
-        }
-    }
-    
-    function displayAdminUsers(users) {
-        if (!elements.accountsTableBody || !elements.merchantsTableBody || !elements.businessRequestsBody) return;
+    // ===== عرض نافذة التواصل مع الإدارة =====
+    function showContactAdminModal() {
+        const modal = elements.contactAdminModal;
+        if (!modal) return;
         
-        // مسح الجداول
-        elements.accountsTableBody.innerHTML = '';
-        elements.merchantsTableBody.innerHTML = '';
-        elements.businessRequestsBody.innerHTML = '';
-        
-        if (!users || users.length === 0) {
-            elements.accountsTableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center">لا يوجد مستخدمون مسجلون</td>
-                </tr>
-            `;
-            return;
-        }
-        
-        let totalUsers = 0;
-        let totalMerchants = 0;
-        let businessRequests = 0;
-        
-        users.forEach(user => {
-            totalUsers++;
-            
-            if (user.isMerchant) totalMerchants++;
-            if (user.wantsBusiness) businessRequests++;
-            
-            // تخطي المدير
-            if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return;
-            
-            // جدول جميع الحسابات
-            const accountRow = createUserRow(user);
-            elements.accountsTableBody.appendChild(accountRow);
-            
-            // جدول التجار
-            if (user.isMerchant) {
-                const merchantRow = createUserRow(user);
-                elements.merchantsTableBody.appendChild(merchantRow);
-            }
-            
-            // جدول طلبات Business
-            if (user.wantsBusiness && !user.businessActivated) {
-                const businessRow = createBusinessRequestRow(user);
-                elements.businessRequestsBody.appendChild(businessRow);
-            }
-        });
-        
-        // تحديث الإحصائيات
-        document.getElementById('total-users').textContent = totalUsers;
-        document.getElementById('total-merchants').textContent = totalMerchants;
-        document.getElementById('total-products').textContent = allProducts.length;
-    }
-    
-    function createUserRow(user) {
-        const row = document.createElement('tr');
-        
-        row.innerHTML = `
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${user.phone || 'غير متوفر'}</td>
-            <td>${user.governorate || 'غير محدد'}</td>
-            <td>
-                ${user.wantsBusiness ? 
-                    (user.businessActivated ? 
-                        '<span class="status-badge success"><i class="fas fa-check"></i> مفعل</span>' : 
-                        '<span class="status-badge warning"><i class="fas fa-clock"></i> قيد الانتظار</span>') : 
-                    '<span class="status-badge">غير مفعل</span>'
-                }
-            </td>
-            <td class="actions">
-                ${!user.isMerchant ? `
-                    <button class="btn btn-small btn-primary make-merchant-btn" data-email="${user.email}">
-                        <i class="fas fa-user-plus"></i> تاجر
-                    </button>
-                ` : `
-                    <button class="btn btn-small btn-warning revoke-merchant-btn" data-email="${user.email}">
-                        <i class="fas fa-user-minus"></i> إلغاء
-                    </button>
-                `}
-                
-                ${user.wantsBusiness && !user.businessActivated ? `
-                    <button class="btn btn-small btn-success activate-business-btn" data-email="${user.email}">
-                        <i class="fas fa-crown"></i> تفعيل
-                    </button>
-                ` : ''}
-            </td>
-        `;
-        
-        return row;
-    }
-    
-    function createBusinessRequestRow(user) {
-        const row = document.createElement('tr');
-        
-        row.innerHTML = `
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${user.phone || 'غير متوفر'}</td>
-            <td>${user.governorate || 'غير محدد'}</td>
-            <td>${formatDate(user.joinDate)}</td>
-            <td class="actions">
-                <button class="btn btn-small btn-success approve-business-btn" data-email="${user.email}">
-                    <i class="fas fa-check"></i> قبول
-                </button>
-                <button class="btn btn-small btn-danger reject-business-btn" data-email="${user.email}">
-                    <i class="fas fa-times"></i> رفض
-                </button>
-            </td>
-        `;
-        
-        return row;
-    }
-    
-    function searchAdminUsers() {
-        const searchTerm = elements.searchUser.value.toLowerCase();
-        const rows = elements.accountsTableBody.querySelectorAll('tr');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            let shouldShow = false;
-            
-            cells.forEach(cell => {
-                if (cell.textContent.toLowerCase().includes(searchTerm)) {
-                    shouldShow = true;
-                }
-            });
-            
-            row.style.display = shouldShow ? '' : 'none';
-        });
-    }
-    
-    function displayAdminProducts(products) {
-        if (!elements.adminProductsContainer) return;
-        
-        elements.adminProductsContainer.innerHTML = '';
-        
-        if (!products || products.length === 0) {
-            elements.adminProductsContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-box-open"></i>
-                    <h3>لا توجد منتجات</h3>
+        modal.innerHTML = `
+            <div class="modal-content contact-modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> مطلوب تصريح للنشر</h3>
+                    <button class="close-modal">&times;</button>
                 </div>
-            `;
-            return;
-        }
+                <div class="modal-body">
+                    <div class="contact-instructions">
+                        <div class="contact-icon">
+                            <i class="fab fa-instagram" style="font-size: 4rem; color: #E1306C;"></i>
+                        </div>
+                        <h4>لنشر منتجاتك تحتاج إلى تصريح من الإدارة</h4>
+                        <p>يرجى التواصل معنا عبر حساب Instagram للحصول على تصريح النشر:</p>
+                        <div class="contact-link">
+                            <a href="${INSTAGRAM_URL}" 
+                               target="_blank" class="btn btn-instagram">
+                                <i class="fab fa-instagram"></i> تواصل معنا على Instagram
+                            </a>
+                        </div>
+                        <p class="contact-note">بعد التواصل وموافقة الإدارة، ستتمكن من نشر منتجاتك على المنصة</p>
+                        <div class="user-info">
+                            <p><strong>اسم المستخدم:</strong> ${currentUser.name}</p>
+                            <p><strong>البريد الإلكتروني:</strong> ${currentUser.email}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        products.forEach(product => {
-            const productCard = createProductCard(product);
-            elements.adminProductsContainer.appendChild(productCard);
-        });
-    }
-    
-    function setupAdminTabs() {
-        const tabButtons = document.querySelectorAll('.admin-nav button');
-        const tabViews = document.querySelectorAll('.admin-sub-view');
-        
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetView = button.dataset.view;
-                
-                // تحديث الأزرار النشطة
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                
-                // إظهار العرض المطلوب
-                tabViews.forEach(view => view.classList.add('hidden'));
-                document.getElementById(targetView).classList.remove('hidden');
-            });
-        });
-    }
-    
-    function setupAdminProductForm() {
-        elements.adminProductForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(elements.adminProductForm);
-            const productData = {
-                name: document.getElementById('admin-product-name').value.trim(),
-                category: document.getElementById('admin-product-category').value,
-                description: document.getElementById('admin-product-desc').value.trim(),
-                price: document.getElementById('admin-product-price').value,
-                condition: document.getElementById('admin-product-condition').value,
-                location: document.getElementById('admin-product-location').value,
-                phone: '+968' + document.getElementById('admin-product-phone').value.trim(),
-                featured: document.getElementById('admin-product-featured').checked,
-                negotiable: document.getElementById('admin-product-negotiable').checked,
-                postedBy: ADMIN_EMAIL,
-                postedByName: 'الإدارة'
-            };
-            
-            // التحقق من البيانات
-            if (!validateProductData(productData)) return;
-            
-            const btn = elements.adminProductForm.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
-            btn.disabled = true;
-            
-            try {
-                const data = await makeRequest('addProduct', productData);
-                
-                if (data.status === 'success') {
-                    showAlert('تم نشر المنتج بنجاح!', 'success');
-                    elements.adminProductForm.reset();
-                    uploadedImages = [];
-                    
-                    // تحديث قائمة المنتجات
-                    const productsData = await makeRequest('getAllProducts');
-                    if (productsData.status === 'success') {
-                        displayAdminProducts(productsData.products || []);
-                        updateAdminStats(allUsers, productsData.products || []);
-                    }
-                } else {
-                    showAlert(data.message, 'error');
-                }
-            } catch (error) {
-                console.error('❌ Error adding product:', error);
-                showAlert('حدث خطأ أثناء نشر المنتج', 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+        // إضافة مستمعي الأحداث
+        setTimeout(() => {
+            const closeBtn = modal.querySelector('.close-modal');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                });
             }
-        });
-    }
-    
-    function updateAdminStats(users, products) {
-        const totalUsers = users.length;
-        const totalMerchants = users.filter(u => u.isMerchant).length;
-        const totalProducts = products.length;
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        }, 100);
         
-        if (document.getElementById('total-users')) {
-            document.getElementById('total-users').textContent = totalUsers;
-        }
-        
-        if (document.getElementById('total-merchants')) {
-            document.getElementById('total-merchants').textContent = totalMerchants;
-        }
-        
-        if (document.getElementById('total-products')) {
-            document.getElementById('total-products').textContent = totalProducts;
-        }
+        modal.classList.remove('hidden');
     }
     
     // ===== نموذج نشر المنتج للمستخدمين =====
     function showUserProductForm() {
-        if (!currentUser || !currentUser.isMerchant) {
-            showAlert('يجب أن تكون تاجراً لنشر منتجات', 'error');
+        if (!currentUser || !currentUser.canPublish) {
+            showContactAdminModal();
             return;
         }
         
@@ -898,109 +647,42 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             
             <div class="form-group">
-                <label for="user-product-category">
-                    <i class="fas fa-list"></i> الفئة *
-                </label>
-                <select id="user-product-category" required>
-                    <option value="">اختر الفئة</option>
-                    <option value="الكترونيات">الكترونيات</option>
-                    <option value="موبايلات">موبايلات</option>
-                    <option value="سيارات">سيارات</option>
-                    <option value="عقارات">عقارات</option>
-                    <option value="أثاث">أثاث</option>
-                    <option value="ملابس">ملابس</option>
-                    <option value="خدمات">خدمات</option>
-                    <option value="أخرى">أخرى</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
                 <label for="user-product-desc">
                     <i class="fas fa-file-alt"></i> وصف المنتج *
                 </label>
                 <textarea id="user-product-desc" rows="4" placeholder="صف منتجك بالتفصيل..." required></textarea>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="user-product-price">
-                        <i class="fas fa-coins"></i> السعر (ريال عماني) *
-                    </label>
-                    <input type="number" id="user-product-price" placeholder="السعر" min="0" step="0.5" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="user-product-condition">
-                        <i class="fas fa-certificate"></i> الحالة *
-                    </label>
-                    <select id="user-product-condition" required>
-                        <option value="">اختر الحالة</option>
-                        <option value="جديد">جديد</option>
-                        <option value="مستعمل-جيد">مستعمل (جيد)</option>
-                        <option value="مستعمل-متوسط">مستعمل (متوسط)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="user-product-location">
-                        <i class="fas fa-map-marker-alt"></i> المكان *
-                    </label>
-                    <select id="user-product-location" required>
-                        <option value="">اختر المحافظة</option>
-                        <option value="مسقط">مسقط</option>
-                        <option value="ظفار">ظفار</option>
-                        <option value="الوسطى">الوسطى</option>
-                        <option value="ظاهرة">ظاهرة</option>
-                        <option value="الباطنة">الباطنة</option>
-                        <option value="البريمي">البريمي</option>
-                        <option value="الشرقية">الشرقية</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="user-product-phone">
-                        <i class="fas fa-phone"></i> رقم التواصل *
-                    </label>
-                    <div class="phone-input">
-                        <span class="country-code">+968</span>
-                        <input type="tel" id="user-product-phone" 
-                               placeholder="رقم الجوال" 
-                               value="${currentUser.phone || ''}"
-                               pattern="[0-9]{8}" 
-                               maxlength="8" 
-                               required>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="user-product-price">
+                    <i class="fas fa-coins"></i> السعر (ريال عماني) *
+                </label>
+                <input type="number" id="user-product-price" placeholder="السعر" min="0" step="0.5" required>
             </div>
             
             <div class="form-group">
                 <label>
-                    <i class="fas fa-images"></i> صور المنتج (اختياري)
+                    <i class="fas fa-images"></i> صورة المنتج
                 </label>
                 <div class="image-upload-area" id="user-image-upload-area">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <p>انقر لرفع الصور أو اسحبها هنا</p>
-                    <small>يمكنك رفع حتى 8 صور</small>
-                    <input type="file" id="user-product-images" multiple accept="image/*" hidden>
+                    <p>انقر لرفع صورة للمنتج</p>
+                    <input type="file" id="user-product-image" accept="image/*" hidden>
                 </div>
                 <div class="image-preview" id="user-image-preview"></div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="user-product-negotiable">
-                        <span>السعر قابل للتفاوض</span>
-                    </label>
-                </div>
-                
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="user-product-featured">
-                        <span>منتج مميز (رسوم إضافية)</span>
-                    </label>
+            <div class="form-group">
+                <label for="user-product-phone">
+                    <i class="fas fa-phone"></i> رقم التواصل *
+                </label>
+                <div class="phone-input">
+                    <span class="country-code">+968</span>
+                    <input type="tel" id="user-product-phone" 
+                           placeholder="رقم الجوال" 
+                           pattern="[0-9]{8}" 
+                           maxlength="8" 
+                           required>
                 </div>
             </div>
             
@@ -1015,28 +697,64 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         // إعداد رفع الصور
-        setupImageUpload(
-            document.getElementById('user-image-upload-area'),
-            document.getElementById('user-product-images'),
-            document.getElementById('user-image-preview')
-        );
+        let uploadedImage = null;
+        const uploadArea = document.getElementById('user-image-upload-area');
+        const fileInput = document.getElementById('user-product-image');
+        const previewArea = document.getElementById('user-image-preview');
+        
+        if (uploadArea && fileInput) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        uploadedImage = {
+                            url: e.target.result,
+                            file: file
+                        };
+                        updateImagePreview();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            function updateImagePreview() {
+                previewArea.innerHTML = '';
+                if (uploadedImage) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${uploadedImage.url}" alt="Preview">
+                        <button class="remove-image" id="remove-user-image">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    previewArea.appendChild(div);
+                    
+                    document.getElementById('remove-user-image').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        uploadedImage = null;
+                        fileInput.value = '';
+                        updateImagePreview();
+                    });
+                }
+            }
+        }
         
         // إرسال النموذج
         form.onsubmit = async (e) => {
             e.preventDefault();
             
             const productData = {
-                name: document.getElementById('user-product-name').value.trim(),
-                category: document.getElementById('user-product-category').value,
+                productName: document.getElementById('user-product-name').value.trim(),
                 description: document.getElementById('user-product-desc').value.trim(),
                 price: document.getElementById('user-product-price').value,
-                condition: document.getElementById('user-product-condition').value,
-                location: document.getElementById('user-product-location').value,
                 phone: '+968' + document.getElementById('user-product-phone').value.trim(),
-                featured: document.getElementById('user-product-featured').checked,
-                negotiable: document.getElementById('user-product-negotiable').checked,
                 postedBy: currentUser.email,
-                postedByName: currentUser.name
+                postedByName: currentUser.name,
+                imageUrl: uploadedImage ? uploadedImage.url : ''
             };
             
             // التحقق من البيانات
@@ -1086,6 +804,423 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     }
     
+    // ===== لوحة التحكم =====
+    async function setupAdminPanel() {
+        try {
+            // تحميل البيانات
+            const [usersData, productsData] = await Promise.all([
+                makeRequest('getAllUsers'),
+                makeRequest('getAllProducts')
+            ]);
+            
+            if (usersData.status === 'success') {
+                allUsers = usersData.users || [];
+                displayAdminUsers(allUsers);
+                updateAdminStats(allUsers, productsData.products || []);
+            }
+            
+            if (productsData.status === 'success') {
+                displayAdminProducts(productsData.products || []);
+            }
+            
+            // إعداد علامات التبويب
+            setupAdminTabs();
+            
+            // إعداد البحث
+            const searchUser = document.getElementById('search-user');
+            if (searchUser) {
+                searchUser.addEventListener('input', searchAdminUsers);
+            }
+            
+            // إعداد نموذج إضافة منتج
+            if (elements.adminProductForm) {
+                setupAdminProductForm();
+            }
+            
+        } catch (error) {
+            console.error('❌ Error setting up admin panel:', error);
+            showAlert('حدث خطأ في تحميل بيانات لوحة التحكم', 'error');
+        }
+    }
+    
+    function displayAdminUsers(users) {
+        if (!elements.accountsTableBody || !elements.merchantsTableBody) return;
+        
+        // مسح الجداول
+        elements.accountsTableBody.innerHTML = '';
+        elements.merchantsTableBody.innerHTML = '';
+        
+        if (!users || users.length === 0) {
+            elements.accountsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center">لا يوجد مستخدمون مسجلون</td>
+                </tr>
+            `;
+            return;
+        }
+        
+        let totalUsers = 0;
+        let totalMerchants = 0;
+        
+        users.forEach(user => {
+            totalUsers++;
+            
+            // تخطي المدير
+            if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return;
+            
+            // جدول جميع الحسابات
+            const accountRow = createUserRow(user);
+            elements.accountsTableBody.appendChild(accountRow);
+            
+            // جدول المصرح لهم بالنشر
+            if (user.canPublish) {
+                totalMerchants++;
+                const merchantRow = createMerchantRow(user);
+                elements.merchantsTableBody.appendChild(merchantRow);
+            }
+        });
+        
+        // تحديث الإحصائيات
+        document.getElementById('total-users').textContent = totalUsers;
+        document.getElementById('total-merchants').textContent = totalMerchants;
+        document.getElementById('total-products').textContent = allProducts.length;
+    }
+    
+    function createUserRow(user) {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>
+                ${user.canPublish ? 
+                    '<span class="status-badge success"><i class="fas fa-check"></i> مصرح بالنشر</span>' : 
+                    '<span class="status-badge warning"><i class="fas fa-times"></i> غير مصرح</span>'
+                }
+            </td>
+            <td>${formatDate(user.joinDate)}</td>
+            <td class="actions">
+                ${!user.canPublish ? `
+                    <button class="btn btn-small btn-primary approve-publish-btn" data-email="${user.email}">
+                        <i class="fas fa-check"></i> تصريح نشر
+                    </button>
+                ` : `
+                    <button class="btn btn-small btn-warning revoke-publish-btn" data-email="${user.email}">
+                        <i class="fas fa-times"></i> إلغاء التصريح
+                    </button>
+                `}
+                
+                <button class="btn btn-small btn-danger delete-user-btn" data-email="${user.email}">
+                    <i class="fas fa-trash"></i> حذف الحساب
+                </button>
+            </td>
+        `;
+        
+        // إضافة مستمعي الأحداث للأزرار
+        setTimeout(() => {
+            const approveBtn = row.querySelector('.approve-publish-btn');
+            const revokeBtn = row.querySelector('.revoke-publish-btn');
+            const deleteBtn = row.querySelector('.delete-user-btn');
+            
+            if (approveBtn) {
+                approveBtn.addEventListener('click', () => {
+                    if (confirm(`هل تريد منح ${user.name} صلاحية نشر المنتجات؟`)) {
+                        togglePublishPermission(user.email, true);
+                    }
+                });
+            }
+            
+            if (revokeBtn) {
+                revokeBtn.addEventListener('click', () => {
+                    if (confirm(`هل تريد إلغاء صلاحية النشر من ${user.name}؟`)) {
+                        togglePublishPermission(user.email, false);
+                    }
+                });
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm(`هل تريد حذف حساب ${user.name}؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+                        deleteUser(user.email);
+                    }
+                });
+            }
+        }, 100);
+        
+        return row;
+    }
+    
+    function createMerchantRow(user) {
+        const row = document.createElement('tr');
+        
+        // حساب عدد منتجات المستخدم
+        const userProducts = allProducts.filter(product => product.postedBy === user.email);
+        
+        row.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${userProducts.length}</td>
+            <td>${formatDate(user.joinDate)}</td>
+            <td class="actions">
+                <button class="btn btn-small btn-warning revoke-publish-btn" data-email="${user.email}">
+                    <i class="fas fa-times"></i> إلغاء التصريح
+                </button>
+                <button class="btn btn-small btn-danger delete-user-btn" data-email="${user.email}">
+                    <i class="fas fa-trash"></i> حذف الحساب
+                </button>
+            </td>
+        `;
+        
+        return row;
+    }
+    
+    async function togglePublishPermission(email, canPublish) {
+        try {
+            // في الحقيقة، نحتاج إلى دالة جديدة في Google Apps Script
+            // لكن هنا سنستخدم toggleMerchantStatus الموجود
+            const data = await makeRequest('toggleMerchantStatus', { email });
+            
+            if (data.status === 'success') {
+                showAlert(canPublish ? 'تم منح صلاحية النشر' : 'تم إلغاء صلاحية النشر', 'success');
+                setupAdminPanel(); // تحديث البيانات
+            } else {
+                showAlert(data.message, 'error');
+            }
+        } catch (error) {
+            console.error('❌ Error toggling publish permission:', error);
+            showAlert('حدث خطأ أثناء تعديل الصلاحيات', 'error');
+        }
+    }
+    
+    async function deleteUser(email) {
+        try {
+            // هنا تحتاج إلى دالة حذف في Google Apps Script
+            // سنضيفها لاحقاً
+            showAlert('ميزة حذف الحساب تحت التطوير', 'info');
+        } catch (error) {
+            console.error('❌ Error deleting user:', error);
+            showAlert('حدث خطأ أثناء حذف الحساب', 'error');
+        }
+    }
+    
+    async function deleteProduct(productId) {
+        try {
+            if (confirm('هل تريد حذف هذا المنتج؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+                // هنا تحتاج إلى دالة حذف منتج في Google Apps Script
+                // سنضيفها لاحقاً
+                showAlert('تم حذف المنتج', 'success');
+                setupAdminPanel(); // تحديث البيانات
+                fetchAndDisplayProducts(); // تحديث المنتجات
+            }
+        } catch (error) {
+            console.error('❌ Error deleting product:', error);
+            showAlert('حدث خطأ أثناء حذف المنتج', 'error');
+        }
+    }
+    
+    function searchAdminUsers() {
+        const searchTerm = document.getElementById('search-user').value.toLowerCase();
+        const rows = elements.accountsTableBody.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let shouldShow = false;
+            
+            cells.forEach(cell => {
+                if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                    shouldShow = true;
+                }
+            });
+            
+            row.style.display = shouldShow ? '' : 'none';
+        });
+    }
+    
+    function displayAdminProducts(products) {
+        if (!elements.adminProductsContainer) return;
+        
+        elements.adminProductsContainer.innerHTML = '';
+        
+        if (!products || products.length === 0) {
+            elements.adminProductsContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <h3>لا توجد منتجات</h3>
+                </div>
+            `;
+            return;
+        }
+        
+        products.forEach(product => {
+            const productCard = createAdminProductCard(product);
+            elements.adminProductsContainer.appendChild(productCard);
+        });
+    }
+    
+    function createAdminProductCard(product) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        
+        const isNew = isProductNew(product.datePosted);
+        const price = formatPrice(product.price);
+        
+        card.innerHTML = `
+            <div class="product-image">
+                <img src="${product.imageUrl || 'https://via.placeholder.com/300x200.png?text=لا+توجد+صورة'}" 
+                     alt="${product.name}"
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/300x200.png?text=صورة+غير+متوفرة'">
+                
+                <div class="product-badges">
+                    ${product.isFeatured ? `
+                        <div class="featured-badge">
+                            <i class="fas fa-star"></i> مميز
+                        </div>
+                    ` : ''}
+                    
+                    ${isNew ? `
+                        <div class="new-badge">
+                            <i class="fas fa-fire"></i> جديد
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="product-price">${price}</div>
+            </div>
+            
+            <div class="product-content">
+                <h3 class="product-title">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                
+                <div class="product-meta">
+                    <div class="product-seller">
+                        <i class="fas fa-user"></i>
+                        <span>${product.postedByName || product.postedBy}</span>
+                    </div>
+                    
+                    <div class="product-date">
+                        <i class="fas fa-calendar"></i>
+                        <span>${formatDate(product.datePosted)}</span>
+                    </div>
+                </div>
+                
+                <div class="admin-product-actions">
+                    <button class="btn btn-small btn-danger delete-product-btn" data-id="${product.id}">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // إضافة مستمع الأحداث لحذف المنتج
+        setTimeout(() => {
+            const deleteBtn = card.querySelector('.delete-product-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    deleteProduct(product.id);
+                });
+            }
+        }, 100);
+        
+        card.addEventListener('click', (e) => {
+            if (!e.target.closest('.admin-product-actions')) {
+                showProductDetails(product);
+            }
+        });
+        
+        return card;
+    }
+    
+    function setupAdminTabs() {
+        const tabButtons = document.querySelectorAll('.admin-nav button');
+        const tabViews = document.querySelectorAll('.admin-sub-view');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetView = button.dataset.view;
+                
+                // تحديث الأزرار النشطة
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // إظهار العرض المطلوب
+                tabViews.forEach(view => view.classList.add('hidden'));
+                document.getElementById(targetView).classList.remove('hidden');
+            });
+        });
+    }
+    
+    function setupAdminProductForm() {
+        elements.adminProductForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(elements.adminProductForm);
+            const productData = {
+                productName: document.getElementById('admin-product-name').value.trim(),
+                category: document.getElementById('admin-product-category').value,
+                description: document.getElementById('admin-product-desc').value.trim(),
+                price: document.getElementById('admin-product-price').value,
+                condition: document.getElementById('admin-product-condition').value,
+                location: document.getElementById('admin-product-location').value,
+                phone: '+968' + document.getElementById('admin-product-phone').value.trim(),
+                isFeatured: document.getElementById('admin-product-featured').checked ? 'true' : 'false',
+                postedBy: ADMIN_EMAIL,
+                postedByName: 'الإدارة'
+            };
+            
+            // التحقق من البيانات
+            if (!validateProductData(productData)) return;
+            
+            const btn = elements.adminProductForm.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
+            btn.disabled = true;
+            
+            try {
+                const data = await makeRequest('addProduct', productData);
+                
+                if (data.status === 'success') {
+                    showAlert('تم نشر المنتج بنجاح!', 'success');
+                    elements.adminProductForm.reset();
+                    
+                    // تحديث قائمة المنتجات
+                    const productsData = await makeRequest('getAllProducts');
+                    if (productsData.status === 'success') {
+                        displayAdminProducts(productsData.products || []);
+                        updateAdminStats(allUsers, productsData.products || []);
+                    }
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error adding product:', error);
+                showAlert('حدث خطأ أثناء نشر المنتج', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    }
+    
+    function updateAdminStats(users, products) {
+        const totalUsers = users.length;
+        const totalMerchants = users.filter(u => u.canPublish).length;
+        const totalProducts = products.length;
+        
+        if (document.getElementById('total-users')) {
+            document.getElementById('total-users').textContent = totalUsers;
+        }
+        
+        if (document.getElementById('total-merchants')) {
+            document.getElementById('total-merchants').textContent = totalMerchants;
+        }
+        
+        if (document.getElementById('total-products')) {
+            document.getElementById('total-products').textContent = totalProducts;
+        }
+    }
+    
     // ===== دوال المساعدة =====
     function validateEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1097,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return re.test(phone);
     }
     
-    function validateRegistration(name, email, phone, password, confirmPassword, governorate) {
+    function validateRegistration(name, email, password, confirmPassword) {
         if (name.length < 2) {
             showAlert('الاسم يجب أن يكون حرفين على الأقل', 'error');
             return false;
@@ -1105,11 +1240,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!validateEmail(email)) {
             showAlert('يرجى إدخال بريد إلكتروني صحيح', 'error');
-            return false;
-        }
-        
-        if (!validatePhone(phone)) {
-            showAlert('يرجى إدخال رقم جوال عماني صحيح (8 أرقام)', 'error');
             return false;
         }
         
@@ -1123,22 +1253,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
         
-        if (!governorate) {
-            showAlert('يرجى اختيار المحافظة', 'error');
-            return false;
-        }
-        
         return true;
     }
     
     function validateProductData(product) {
-        if (!product.name || product.name.length < 3) {
+        if (!product.productName || product.productName.length < 3) {
             showAlert('اسم المنتج يجب أن يكون 3 أحرف على الأقل', 'error');
-            return false;
-        }
-        
-        if (!product.category) {
-            showAlert('يرجى اختيار فئة المنتج', 'error');
             return false;
         }
         
@@ -1152,99 +1272,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
         
-        if (!product.condition) {
-            showAlert('يرجى اختيار حالة المنتج', 'error');
-            return false;
-        }
-        
-        if (!product.location) {
-            showAlert('يرجى اختيار مكان المنتج', 'error');
-            return false;
-        }
-        
         if (!product.phone || product.phone.length !== 13) {
             showAlert('رقم الجوال غير صحيح', 'error');
             return false;
         }
         
         return true;
-    }
-    
-    function setupImageUpload(uploadArea, fileInput, previewArea) {
-        let images = [];
-        
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = 'rgba(219, 31, 42, 0.1)';
-            uploadArea.style.borderColor = 'var(--primary-color)';
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.background = '';
-            uploadArea.style.borderColor = '';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '';
-            uploadArea.style.borderColor = '';
-            handleImageUpload(e.dataTransfer.files);
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-            handleImageUpload(e.target.files);
-        });
-        
-        function handleImageUpload(files) {
-            const maxImages = 8;
-            if (images.length + files.length > maxImages) {
-                showAlert(`يمكنك رفع حتى ${maxImages} صور فقط`, 'error');
-                return;
-            }
-            
-            Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        images.push({
-                            url: e.target.result,
-                            file: file
-                        });
-                        updateImagePreview();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-        
-        function updateImagePreview() {
-            previewArea.innerHTML = '';
-            images.forEach((img, index) => {
-                const div = document.createElement('div');
-                div.className = 'preview-item';
-                div.innerHTML = `
-                    <img src="${img.url}" alt="Preview ${index + 1}">
-                    <button class="remove-image" data-index="${index}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                previewArea.appendChild(div);
-            });
-            
-            // إضافة مستمعي الأحداث لأزرار الحذف
-            previewArea.querySelectorAll('.remove-image').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const index = parseInt(btn.dataset.index);
-                    images.splice(index, 1);
-                    updateImagePreview();
-                });
-            });
-        }
-        
-        return images;
     }
     
     function formatPrice(price) {
@@ -1288,22 +1321,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return diffDays <= 7; // منتج جديد إذا كان منشوراً خلال أسبوع
         } catch (error) {
             return false;
-        }
-    }
-    
-    function getConditionText(condition) {
-        const conditions = {
-            'جديد': 'جديد',
-            'مستعمل-جيد': 'مستعمل (جيد)',
-            'مستعمل-متوسط': 'مستعمل (متوسط)'
-        };
-        
-        return conditions[condition] || condition || 'غير محدد';
-    }
-    
-    function showBusinessAlert() {
-        if (elements.businessAlert) {
-            elements.businessAlert.classList.remove('hidden');
         }
     }
     
@@ -1459,12 +1476,28 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // الأزرار العائمة
         if (elements.floatAddProduct) {
-            elements.floatAddProduct.addEventListener('click', showUserProductForm);
+            elements.floatAddProduct.addEventListener('click', () => {
+                if (!currentUser) {
+                    showRegisterForm();
+                } else if (!currentUser.canPublish) {
+                    showContactAdminModal();
+                } else {
+                    showUserProductForm();
+                }
+            });
         }
         
-        if (elements.floatWhatsapp) {
-            elements.floatWhatsapp.addEventListener('click', () => {
-                window.open(`https://wa.me/${WHATSAPP_NUMBER}`, '_blank');
+        // رابط نشر منتج في الفوتر
+        if (elements.publishProductLink) {
+            elements.publishProductLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!currentUser) {
+                    showRegisterForm();
+                } else if (!currentUser.canPublish) {
+                    showContactAdminModal();
+                } else {
+                    showUserProductForm();
+                }
             });
         }
     }
@@ -1481,6 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // جعل الدوال متاحة بشكل عام
     window.fetchAndDisplayProducts = fetchAndDisplayProducts;
     window.showUserProductForm = showUserProductForm;
+    window.showContactAdminModal = showContactAdminModal;
     
     // بدء التطبيق
     initializeApp();

@@ -132,14 +132,6 @@
                         </div>
                     </div>
                     
-                    <div class="form-options">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="remember-me">
-                            <span>تذكرني</span>
-                        </label>
-                        <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
-                    </div>
-                    
                     <button type="submit" class="btn btn-primary btn-large">
                         <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
                     </button>
@@ -153,59 +145,20 @@
                     </button>
                 </form>
 
-                <!-- نموذج إنشاء حساب -->
+                <!-- نموذج إنشاء حساب (مبسط) -->
                 <form id="register-form" class="auth-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="register-name">
-                                <i class="fas fa-user"></i> الاسم الكامل *
-                            </label>
-                            <input type="text" id="register-name" placeholder="أحمد محمد" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="register-email">
-                                <i class="fas fa-envelope"></i> البريد الإلكتروني *
-                            </label>
-                            <input type="email" id="register-email" placeholder="example@email.com" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="register-phone">
-                                <i class="fas fa-phone"></i> رقم الجوال العماني *
-                            </label>
-                            <div class="phone-input">
-                                <span class="country-code">+968</span>
-                                <input type="tel" id="register-phone" placeholder="9X XXX XXX" 
-                                       pattern="[0-9]{8}" maxlength="8" required>
-                            </div>
-                            <small class="form-hint">مثال: 91234567</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="register-governorate">
-                                <i class="fas fa-map-marker-alt"></i> المحافظة *
-                            </label>
-                            <select id="register-governorate" required>
-                                <option value="">اختر المحافظة</option>
-                                <option value="مسقط">مسقط</option>
-                                <option value="ظفار">ظفار</option>
-                                <option value="الوسطى">الوسطى</option>
-                                <option value="ظاهرة">ظاهرة</option>
-                                <option value="الباطنة">الباطنة</option>
-                                <option value="البريمي">البريمي</option>
-                                <option value="الشرقية">الشرقية</option>
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label for="register-name">
+                            <i class="fas fa-user"></i> الاسم الكامل *
+                        </label>
+                        <input type="text" id="register-name" placeholder="أحمد محمد" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="register-address">
-                            <i class="fas fa-home"></i> العنوان التفصيلي
+                        <label for="register-email">
+                            <i class="fas fa-envelope"></i> البريد الإلكتروني *
                         </label>
-                        <input type="text" id="register-address" placeholder="الحي، الشارع، رقم المنزل">
+                        <input type="email" id="register-email" placeholder="example@email.com" required>
                     </div>
                     
                     <div class="form-row">
@@ -234,14 +187,6 @@
                             <input type="checkbox" id="agree-terms" required>
                             <span>أوافق على <a href="#" class="terms-link">الشروط والأحكام</a> و <a href="#" class="terms-link">سياسة الخصوصية</a></span>
                         </label>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="business-account">
-                            <span>أريد حساب Business (مميزات إضافية)</span>
-                        </label>
-                        <small class="form-hint">سنتواصل معك لتفعيل الحساب Business</small>
                     </div>
                     
                     <button type="submit" class="btn btn-primary btn-large btn-block">
@@ -275,10 +220,10 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fas fa-store"></i>
+                        <i class="fas fa-check-circle"></i>
                         <div>
                             <h3 id="total-merchants">0</h3>
-                            <p>التجار</p>
+                            <p>المصرح لهم بالنشر</p>
                         </div>
                     </div>
                 </div>
@@ -289,13 +234,10 @@
                     <i class="fas fa-users"></i> الحسابات
                 </button>
                 <button data-view="merchants-view">
-                    <i class="fas fa-store"></i> التجار
+                    <i class="fas fa-store"></i> المصرح لهم
                 </button>
                 <button data-view="products-view-admin">
                     <i class="fas fa-box"></i> المنتجات
-                </button>
-                <button data-view="business-requests-view">
-                    <i class="fas fa-crown"></i> طلبات Business
                 </button>
                 <button data-view="add-product-view">
                     <i class="fas fa-plus-circle"></i> إضافة منتج
@@ -318,9 +260,8 @@
                                 <tr>
                                     <th>الاسم</th>
                                     <th>البريد</th>
-                                    <th>الجوال</th>
-                                    <th>المحافظة</th>
-                                    <th>حالة Business</th>
+                                    <th>حالة النشر</th>
+                                    <th>تاريخ التسجيل</th>
                                     <th>إجراءات</th>
                                 </tr>
                             </thead>
@@ -331,18 +272,17 @@
                     </div>
                 </div>
 
-                <!-- عرض التجار -->
+                <!-- عرض المصرح لهم بالنشر -->
                 <div id="merchants-view" class="admin-sub-view hidden">
-                    <h3><i class="fas fa-store"></i> التجار المعتمدون</h3>
+                    <h3><i class="fas fa-store"></i> المصرح لهم بالنشر</h3>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>الاسم</th>
                                     <th>البريد</th>
-                                    <th>الجوال</th>
                                     <th>عدد المنتجات</th>
-                                    <th>تاريخ التسجيل</th>
+                                    <th>تاريخ التصريح</th>
                                     <th>إجراءات</th>
                                 </tr>
                             </thead>
@@ -365,28 +305,6 @@
                     </div>
                     <div id="admin-products-container" class="products-grid">
                         <!-- سيتم عرض المنتجات هنا -->
-                    </div>
-                </div>
-
-                <!-- طلبات Business -->
-                <div id="business-requests-view" class="admin-sub-view hidden">
-                    <h3><i class="fas fa-crown"></i> طلبات تفعيل Business</h3>
-                    <div class="table-responsive">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>الاسم</th>
-                                    <th>البريد</th>
-                                    <th>الجوال</th>
-                                    <th>المحافظة</th>
-                                    <th>تاريخ الطلب</th>
-                                    <th>إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="business-requests-body">
-                                <!-- سيتم ملؤه بواسطة JavaScript -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
@@ -518,6 +436,32 @@
                 <!-- سيتم ملؤه بواسطة JavaScript -->
             </div>
         </div>
+        
+        <!-- نافذة التواصل مع الإدارة للنشر -->
+        <div id="contact-admin-modal" class="modal-overlay hidden">
+            <div class="modal-content contact-modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> مطلوب تصريح للنشر</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="contact-instructions">
+                        <div class="contact-icon">
+                            <i class="fab fa-instagram" style="font-size: 4rem; color: #E1306C;"></i>
+                        </div>
+                        <h4>لنشر منتجاتك تحتاج إلى تصريح من الإدارة</h4>
+                        <p>يرجى التواصل معنا عبر حساب Instagram للحصول على تصريح النشر:</p>
+                        <div class="contact-link">
+                            <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" 
+                               target="_blank" class="btn btn-instagram">
+                                <i class="fab fa-instagram"></i> تواصل معنا على Instagram
+                            </a>
+                        </div>
+                        <p class="contact-note">بعد التواصل وموافقة الإدارة، ستتمكن من نشر منتجاتك على المنصة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- فوتر عماني -->
@@ -529,9 +473,10 @@
                     <p>منصة البيع والشراء الأولى في سلطنة عُمان</p>
                     <div class="social-links">
                         <a href="#"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" target="_blank">
+                            <i class="fab fa-instagram"></i>
+                        </a>
                         <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-telegram"></i></a>
                     </div>
                 </div>
                 
@@ -540,7 +485,7 @@
                     <ul>
                         <li><a href="#"><i class="fas fa-home"></i> الرئيسية</a></li>
                         <li><a href="#"><i class="fas fa-box"></i> جميع المنتجات</a></li>
-                        <li><a href="#"><i class="fas fa-plus-circle"></i> نشر منتج</a></li>
+                        <li><a href="#" id="publish-product-link"><i class="fas fa-plus-circle"></i> نشر منتج</a></li>
                         <li><a href="#"><i class="fas fa-question-circle"></i> المساعدة</a></li>
                     </ul>
                 </div>
