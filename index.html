@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAidea - منصة الأفكار الإلكترونية</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-lightbulb"></i> WebAidea</h1>
+            <nav id="main-nav">
+                <!-- سيتم التحكم في المحتوى هنا بواسطة JavaScript -->
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <!-- صفحة عرض المنتجات (الصفحة الرئيسية) -->
+        <section id="products-view">
+            <h2>جميع المنتجات</h2>
+            <div id="products-container" class="products-grid">
+                <!-- سيتم إضافة المنتجات هنا بواسطة JavaScript -->
+            </div>
+        </section>
+
+        <!-- قسم تسجيل الدخول / إنشاء حساب -->
+        <section id="auth-view" class="hidden">
+            <div class="form-container">
+                <div class="form-tabs">
+                    <button id="show-login">تسجيل الدخول</button>
+                    <button id="show-register">إنشاء حساب جديد</button>
+                </div>
+                
+                <form id="login-form" class="auth-form">
+                    <h2>تسجيل الدخول</h2>
+                    <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
+                    <input type="password" id="login-password" placeholder="كلمة المرور" required>
+                    <button type="submit">دخول</button>
+                </form>
+
+                <form id="register-form" class="auth-form hidden">
+                    <h2>إنشاء حساب جديد</h2>
+                    <input type="text" id="register-name" placeholder="الاسم الكامل" required>
+                    <input type="email" id="register-email" placeholder="البريد الإلكتروني" required>
+                    <input type="password" id="register-password" placeholder="كلمة المرور" required>
+                    <button type="submit">إنشاء الحساب</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- لوحة تحكم المدير -->
+        <section id="admin-panel" class="hidden">
+            <h2>لوحة تحكم المدير</h2>
+            <div class="admin-nav">
+                <button data-view="accounts-view">الحسابات</button>
+                <button data-view="merchants-view">التجار</button>
+                <button data-view="ads-view">الإعلانات المنشورة</button>
+                <button data-view="post-ad-view">نشر إعلان جديد</button>
+            </div>
+            
+            <div id="admin-content-area">
+                <!-- عرض الحسابات -->
+                <div id="accounts-view" class="admin-sub-view">
+                    <h3>جميع الحسابات</h3>
+                    <input type="text" id="search-user" placeholder="البحث عن طريق البريد الإلكتروني...">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounts-table-body">
+                            <!-- سيتم إضافة المستخدمين هنا -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- عرض التجار -->
+                <div id="merchants-view" class="admin-sub-view hidden">
+                    <h3>التجار المصرح لهم</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="merchants-table-body">
+                            <!-- سيتم إضافة التجار هنا -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- عرض الإعلانات -->
+                <div id="ads-view" class="admin-sub-view hidden">
+                    <h3>جميع الإعلانات المنشورة</h3>
+                    <div id="admin-ads-container" class="products-grid">
+                        <!-- سيتم عرض الإعلانات هنا -->
+                    </div>
+                </div>
+
+                <!-- نشر إعلان -->
+                <div id="post-ad-view" class="admin-sub-view hidden">
+                    <h3>نشر إعلان جديد (من قبل الإدارة)</h3>
+                    <form id="admin-post-ad-form" class="auth-form">
+                        <input type="text" id="admin-product-name" placeholder="اسم المنتج" required>
+                        <textarea id="admin-product-desc" placeholder="وصف المنتج" rows="5" required></textarea>
+                        <input type="url" id="admin-product-image" placeholder="رابط صورة المنتج" required>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="is-featured-ad">
+                            <label for="is-featured-ad">إعلان مميز / استثنائي</label>
+                        </div>
+                        <button type="submit">نشر الإعلان</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer>
+        <p>جميع الحقوق محفوظة &copy; 2024 WebAidea</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
