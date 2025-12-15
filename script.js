@@ -70,7 +70,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     reject(new Error(data?.message || 'حدث خطأ غير معروف'));
                 }
             };
-            
+            // في script.js، أضف دالة الاختبار
+async function testRegistration() {
+    console.log('🧪 بدء اختبار التسجيل...');
+    
+    const testData = {
+        name: 'مستخدم اختبار',
+        email: 'test' + Date.now() + '@test.com',
+        phone: '',
+        password: '123456'
+    };
+    
+    try {
+        const result = await makeRequest('register', testData);
+        console.log('✅ اختبار التسجيل ناجح:', result);
+        showAlert('✅ اختبار التسجيل ناجح!', 'success');
+    } catch (error) {
+        console.error('❌ اختبار التسجيل فشل:', error);
+        showAlert('❌ اختبار التسجيل فشل: ' + error.message, 'error');
+    }
+}
+
+// جعل الدالة متاحة عالمياً
+window.testRegistration = testRegistration;
             const script = document.createElement('script');
             script.src = url;
             
