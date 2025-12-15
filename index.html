@@ -6,9 +6,9 @@
     <title>WebAidea - منصة الأفكار الإلكترونية</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 </head>
 <body>
-
     <header>
         <div class="container">
             <h1><i class="fas fa-lightbulb"></i> WebAidea</h1>
@@ -19,10 +19,15 @@
     </header>
 
     <main class="container">
-        
         <!-- صفحة عرض المنتجات (الصفحة الرئيسية) -->
         <section id="products-view">
-            <h2>جميع المنتجات</h2>
+            <div class="page-header">
+                <h2>جميع المنتجات</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">الكل</button>
+                    <button class="filter-btn" data-filter="featured">المميزة</button>
+                </div>
+            </div>
             <div id="products-container" class="products-grid">
                 <!-- سيتم إضافة المنتجات هنا بواسطة JavaScript -->
             </div>
@@ -40,15 +45,20 @@
                     <h2>تسجيل الدخول</h2>
                     <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
                     <input type="password" id="login-password" placeholder="كلمة المرور" required>
-                    <button type="submit">دخول</button>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-sign-in-alt"></i> دخول
+                    </button>
                 </form>
 
                 <form id="register-form" class="auth-form hidden">
                     <h2>إنشاء حساب جديد</h2>
                     <input type="text" id="register-name" placeholder="الاسم الكامل" required>
                     <input type="email" id="register-email" placeholder="البريد الإلكتروني" required>
-                    <input type="password" id="register-password" placeholder="كلمة المرور" required>
-                    <button type="submit">إنشاء الحساب</button>
+                    <input type="tel" id="register-phone" placeholder="رقم الجوال (05xxxxxxxx)" pattern="05[0-9]{8}" required>
+                    <input type="password" id="register-password" placeholder="كلمة المرور" minlength="6" required>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-user-plus"></i> إنشاء الحساب
+                    </button>
                 </form>
             </div>
         </section>
@@ -57,7 +67,7 @@
         <section id="admin-panel" class="hidden">
             <h2>لوحة تحكم المدير</h2>
             <div class="admin-nav">
-                <button data-view="accounts-view">الحسابات</button>
+                <button data-view="accounts-view" class="active">الحسابات</button>
                 <button data-view="merchants-view">التجار</button>
                 <button data-view="ads-view">الإعلانات المنشورة</button>
                 <button data-view="post-ad-view">نشر إعلان جديد</button>
@@ -66,37 +76,45 @@
             <div id="admin-content-area">
                 <!-- عرض الحسابات -->
                 <div id="accounts-view" class="admin-sub-view">
-                    <h3>جميع الحسابات</h3>
-                    <input type="text" id="search-user" placeholder="البحث عن طريق البريد الإلكتروني...">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>الاسم</th>
-                                <th>البريد الإلكتروني</th>
-                                <th>إجراء</th>
-                            </tr>
-                        </thead>
-                        <tbody id="accounts-table-body">
-                            <!-- سيتم إضافة المستخدمين هنا -->
-                        </tbody>
-                    </table>
+                    <div class="admin-header">
+                        <h3>جميع الحسابات</h3>
+                        <input type="text" id="search-user" placeholder="🔍 ابحث عن طريق البريد أو الاسم...">
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>البريد الإلكتروني</th>
+                                    <th>رقم الجوال</th>
+                                    <th>إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accounts-table-body">
+                                <!-- سيتم إضافة المستخدمين هنا -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- عرض التجار -->
                 <div id="merchants-view" class="admin-sub-view hidden">
                     <h3>التجار المصرح لهم</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>الاسم</th>
-                                <th>البريد الإلكتروني</th>
-                                <th>إجراء</th>
-                            </tr>
-                        </thead>
-                        <tbody id="merchants-table-body">
-                            <!-- سيتم إضافة التجار هنا -->
-                        </tbody>
-                    </table>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>البريد الإلكتروني</th>
+                                    <th>رقم الجوال</th>
+                                    <th>عدد إعلاناته</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merchants-table-body">
+                                <!-- سيتم إضافة التجار هنا -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- عرض الإعلانات -->
@@ -111,25 +129,156 @@
                 <div id="post-ad-view" class="admin-sub-view hidden">
                     <h3>نشر إعلان جديد (من قبل الإدارة)</h3>
                     <form id="admin-post-ad-form" class="auth-form">
-                        <input type="text" id="admin-product-name" placeholder="اسم المنتج" required>
-                        <textarea id="admin-product-desc" placeholder="وصف المنتج" rows="5" required></textarea>
-                        <input type="url" id="admin-product-image" placeholder="رابط صورة المنتج" required>
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="is-featured-ad">
-                            <label for="is-featured-ad">إعلان مميز / استثنائي</label>
+                        <div class="form-group">
+                            <label for="admin-product-name">اسم المنتج *</label>
+                            <input type="text" id="admin-product-name" placeholder="اسم المنتج" required>
                         </div>
-                        <button type="submit">نشر الإعلان</button>
+                        <div class="form-group">
+                            <label for="admin-product-desc">وصف المنتج *</label>
+                            <textarea id="admin-product-desc" placeholder="وصف المنتج" rows="5" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-product-images">صور المنتج</label>
+                            <div class="image-upload-container">
+                                <div class="upload-area" id="admin-upload-area">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>اسحب وأفلت الصور هنا أو انقر للاختيار</p>
+                                    <span class="upload-hint">يمكنك رفع حتى 5 صور</span>
+                                </div>
+                                <input type="file" id="admin-product-images" multiple accept="image/*" hidden>
+                                <div class="image-preview" id="admin-image-preview"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-product-phone">رقم التواصل</label>
+                            <input type="tel" id="admin-product-phone" placeholder="رقم الجوال (اختياري)">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-product-price">السعر (ريال سعودي)</label>
+                            <input type="number" id="admin-product-price" placeholder="السعر بالريال">
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="is-featured-ad">
+                                <label for="is-featured-ad">إعلان مميز / استثنائي</label>
+                            </div>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn primary-btn">
+                                <i class="fas fa-paper-plane"></i> نشر الإعلان
+                            </button>
+                            <button type="button" class="btn secondary-btn" id="clear-admin-form">
+                                <i class="fas fa-times"></i> مسح النموذج
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </section>
-        
     </main>
+
+    <!-- شريط سفري للجوال -->
+    <div class="mobile-footer-bar hidden">
+        <a href="#" class="mobile-tab active" data-view="products-view">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a href="#" class="mobile-tab" id="mobile-post-btn">
+            <i class="fas fa-plus-circle"></i>
+            <span>نشر</span>
+        </a>
+        <a href="#" class="mobile-tab" id="mobile-profile-btn">
+            <i class="fas fa-user"></i>
+            <span>حسابي</span>
+        </a>
+    </div>
+
+    <!-- نافذة رفع الصور -->
+    <div id="image-upload-modal" class="modal-overlay hidden">
+        <div class="modal-content image-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-images"></i> رفع صور المنتج</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-options">
+                    <div class="upload-option" id="upload-from-device">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>من الجهاز</span>
+                    </div>
+                    <div class="upload-option" id="upload-from-url">
+                        <i class="fas fa-link"></i>
+                        <span>رابط صورة</span>
+                    </div>
+                </div>
+                
+                <div class="url-upload hidden">
+                    <input type="url" id="image-url-input" placeholder="https://example.com/image.jpg">
+                    <button id="add-url-image" class="btn small-btn">إضافة</button>
+                </div>
+                
+                <div class="image-preview-area" id="modal-image-preview"></div>
+                
+                <div class="modal-actions">
+                    <button id="confirm-images" class="btn primary-btn">تأكيد</button>
+                    <button id="cancel-upload" class="btn secondary-btn">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تفاصيل المنتج -->
+    <div id="product-details-modal" class="modal-overlay hidden">
+        <div class="modal-content details-modal">
+            <div class="modal-header">
+                <h3 id="product-modal-title"></h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="product-gallery" id="product-gallery"></div>
+                <div class="product-info">
+                    <p id="product-modal-desc"></p>
+                    <div class="product-meta-details">
+                        <div class="meta-item">
+                            <i class="fas fa-user"></i>
+                            <span id="product-modal-seller"></span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-phone"></i>
+                            <span id="product-modal-phone"></span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="product-modal-date"></span>
+                        </div>
+                        <div class="meta-item" id="price-container">
+                            <i class="fas fa-tag"></i>
+                            <span id="product-modal-price"></span>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn whatsapp-btn" id="whatsapp-contact">
+                            <i class="fab fa-whatsapp"></i> تواصل عبر واتساب
+                        </button>
+                        <button class="btn call-btn" id="call-contact">
+                            <i class="fas fa-phone"></i> الاتصال
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <p>جميع الحقوق محفوظة &copy; 2024 WebAidea</p>
+        <p class="footer-links">
+            <a href="#" id="privacy-policy">سياسة الخصوصية</a> | 
+            <a href="#" id="terms-service">الشروط والأحكام</a> | 
+            <a href="#" id="contact-us">اتصل بنا</a>
+        </p>
     </footer>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
