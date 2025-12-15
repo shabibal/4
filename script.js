@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ===== التهيئة =====
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqJmg3PLDj9Y9y4IIpBLQxEN9S3rFfJfasElFuArxAo4xej11IFA89AY_bGYlg076auw/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWGNrTskotwR5VlC7DZcEXcogKNbQreHutWi6_KotmG4mxel-Nzf5YXTUvc-Ds2s0aDw/exec';
     const ADMIN_EMAIL = "msdfrrt@gmail.com";
     const INSTAGRAM_URL = "https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr";
     const SUPPORT_PHONE = "+96895873061";
@@ -70,29 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     reject(new Error(data?.message || 'حدث خطأ غير معروف'));
                 }
             };
-            // في script.js، أضف دالة الاختبار
-async function testRegistration() {
-    console.log('🧪 بدء اختبار التسجيل...');
-    
-    const testData = {
-        name: 'مستخدم اختبار',
-        email: 'test' + Date.now() + '@test.com',
-        phone: '',
-        password: '123456'
-    };
-    
-    try {
-        const result = await makeRequest('register', testData);
-        console.log('✅ اختبار التسجيل ناجح:', result);
-        showAlert('✅ اختبار التسجيل ناجح!', 'success');
-    } catch (error) {
-        console.error('❌ اختبار التسجيل فشل:', error);
-        showAlert('❌ اختبار التسجيل فشل: ' + error.message, 'error');
-    }
-}
-
-// جعل الدالة متاحة عالمياً
-window.testRegistration = testRegistration;
+            
             const script = document.createElement('script');
             script.src = url;
             
