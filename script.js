@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // روابط السكربت
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxuAKKf-g4L3c4UyV0tBfmw7ntH-FaVw_JtcUc7clbnfEkgDIuKENbONmQ_Qv5sIyIqlg/exec';
+    // روابط السكربت - ضع رابطك الجديد هنا
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqMgpu-HDREaLDhtDBjsbalBnGKInQ9pvfRru7RwqF-OeBxO66GoSFCI1drLp2s8ziCA/exec';
     const ADMIN_EMAIL = "msdfrrt@gmail.com";
     
     // عناصر DOM
@@ -18,120 +18,65 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let isAdmin = false;
     
-    // === دالة الإتصال المحسنة ===
+    // === دالة الاتصال باستخدام JSONP ===
     async function makeRequest(action, params = {}) {
-        try {
-            // طريقة 1: استخدام GET مباشر (تعمل مع CORS)
-            let url = `${SCRIPT_URL}?action=${action}`;
+        return new Promise((resolve, reject) => {
+            // إنشاء اسم فريد للدالة callback
+            const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).substr(2);
+            
+            // بناء رابط الطلب
+            let url = `${SCRIPT_URL}?action=${action}&callback=${callbackName}`;
+            
+            // إضافة المعاملات
             Object.keys(params).forEach(key => {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
                 }
             });
             
-            console.log('🔗 إرسال طلب إلى:', url);
+            console.log('🔗 جاري إرسال طلب JSONP:', url);
             
-            // محاولة GET أولاً
-            const response = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-cache',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`خطأ HTTP: ${response.status}`);
-            }
-            
-            const text = await response.text();
-            
-            // محاولة تحليل JSON
-            try {
-                const data = JSON.parse(text);
-                console.log('✅ استجابة ناجحة:', data);
-                return data;
-            } catch (e) {
-                console.error('❌ خطأ في تحليل JSON:', e);
-                return {
-                    status: 'error',
-                    message: 'تنسيق الرد غير صحيح'
-                };
-            }
-            
-        } catch (error) {
-            console.error('❌ فشل الاتصال:', error);
-            
-            // طريقة 2: استخدام JSONP (للطوارئ)
-            try {
-                console.log('🔄 محاولة باستخدام JSONP...');
-                return await jsonpRequest(action, params);
-            } catch (jsonpError) {
-                console.error('❌ فشل JSONP أيضاً:', jsonpError);
-                
-                // طريقة 3: استخدام POST (الملاذ الأخير)
-                try {
-                    console.log('🔄 محاولة باستخدام POST...');
-                    const formData = new URLSearchParams();
-                    formData.append('action', action);
-                    Object.keys(params).forEach(key => {
-                        if (params[key] !== undefined && params[key] !== null) {
-                            formData.append(key, params[key]);
-                        }
-                    });
-                    
-                    const postResponse = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: formData,
-                        mode: 'cors'
-                    });
-                    
-                    return await postResponse.json();
-                } catch (postError) {
-                    console.error('❌ فشل جميع المحاولات:', postError);
-                    return {
-                        status: 'error',
-                        message: 'فشل الاتصال بالخادم. تأكد من اتصالك بالإنترنت.'
-                    };
-                }
-            }
-        }
-    }
-    
-    // دالة JSONP
-    function jsonpRequest(action, params = {}) {
-        return new Promise((resolve, reject) => {
-            const callbackName = 'jsonp_' + Date.now();
-            let url = `${SCRIPT_URL}?action=${action}&callback=${callbackName}`;
-            
-            Object.keys(params).forEach(key => {
-                url += `&${key}=${encodeURIComponent(params[key])}`;
-            });
-            
+            // تعريف دالة callback مؤقتة
             window[callbackName] = function(data) {
+                // تنظيف بعد الاستجابة
                 delete window[callbackName];
-                document.body.removeChild(script);
-                resolve(data);
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
+                
+                console.log('✅ استجابة JSONP:', data);
+                
+                if (data && data.status === 'success') {
+                    resolve(data);
+                } else {
+                    reject(new Error(data?.message || 'خطأ غير معروف'));
+                }
             };
             
+            // إنشاء عنصر script
             const script = document.createElement('script');
             script.src = url;
-            script.onerror = () => {
+            
+            // معالجة الأخطاء
+            script.onerror = function() {
                 delete window[callbackName];
-                reject(new Error('فشل تحميل السكربت'));
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
+                reject(new Error('فشل تحميل السكربت. تأكد من رابط السكربت.'));
             };
             
+            // إضافة السكربت للصفحة
             document.body.appendChild(script);
             
             // انتهاء الصلاحية بعد 10 ثواني
             setTimeout(() => {
                 if (window[callbackName]) {
                     delete window[callbackName];
-                    reject(new Error('انتهت مهلة الاتصال'));
+                    if (script.parentNode) {
+                        document.body.removeChild(script);
+                    }
+                    reject(new Error('انتهت مهلة الاتصال بالخادم'));
                 }
             }, 10000);
         });
@@ -236,11 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
         } catch (error) {
+            console.error('❌ خطأ في جلب المنتجات:', error);
             productsContainer.innerHTML = `
                 <div class="error-message">
                     <i class="fas fa-wifi-slash"></i>
                     <p>لا يمكن الاتصال بالخادم</p>
-                    <p><small>تحقق من اتصالك بالإنترنت</small></p>
+                    <p><small>${error.message}</small></p>
                     <button onclick="fetchAndDisplayProducts()">إعادة المحاولة</button>
                 </div>
             `;
@@ -266,7 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `product-card ${product.isFeatured ? 'featured' : ''}`;
             card.innerHTML = `
                 <div class="product-image">
-                    <img src="${product.imageUrl}" alt="${product.name}" 
+                    <img src="${product.imageUrl || 'https://via.placeholder.com/300x220.png?text=صورة+غير+متوفرة'}" 
+                         alt="${product.name}" 
                          onerror="this.src='https://via.placeholder.com/300x220.png?text=صورة+غير+متوفرة'">
                     ${product.isFeatured ? '<span class="featured-badge">مميز</span>' : ''}
                 </div>
@@ -275,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="product-desc">${product.description}</p>
                     <div class="product-meta">
                         <span class="posted-by">
-                            <i class="fas fa-user"></i> ${product.postedBy}
+                            <i class="fas fa-user"></i> ${product.postedBy || 'غير معروف'}
                         </span>
                         <span class="product-date">
                             <i class="fas fa-calendar"></i> ${formatDate(product.datePosted)}
@@ -298,8 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function formatDate(dateString) {
         if (!dateString) return 'غير معروف';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ar-SA');
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ar-SA');
+        } catch (e) {
+            return 'غير معروف';
+        }
     }
     
     // === تسجيل الدخول والتسجيل ===
@@ -347,7 +298,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(data.message, 'error');
             }
         } catch (error) {
-            showAlert('فشل الاتصال بالخادم', 'error');
+            console.error('❌ خطأ في تسجيل الدخول:', error);
+            showAlert(error.message || 'فشل الاتصال بالخادم', 'error');
         } finally {
             loginBtn.innerHTML = originalText;
             loginBtn.disabled = false;
@@ -396,7 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(data.message, 'error');
             }
         } catch (error) {
-            showAlert('فشل الاتصال بالخادم', 'error');
+            console.error('❌ خطأ في التسجيل:', error);
+            showAlert(error.message || 'فشل الاتصال بالخادم', 'error');
         } finally {
             registerBtn.innerHTML = originalText;
             registerBtn.disabled = false;
@@ -543,7 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayUsers(data.users);
             }
         } catch (error) {
-            console.error('Error fetching users:', error);
+            console.error('❌ خطأ في جلب المستخدمين:', error);
+            showAlert('خطأ في تحميل المستخدمين', 'error');
         }
     }
     
@@ -617,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayAdminAds(data.products);
             }
         } catch (error) {
-            console.error('Error fetching ads:', error);
+            console.error('❌ خطأ في جلب الإعلانات:', error);
         }
     }
     
@@ -641,7 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `product-card ${product.isFeatured ? 'featured' : ''}`;
             card.innerHTML = `
                 <div class="product-image">
-                    <img src="${product.imageUrl}" alt="${product.name}" 
+                    <img src="${product.imageUrl || 'https://via.placeholder.com/300x220.png?text=صورة+غير+متوفرة'}" 
+                         alt="${product.name}" 
                          onerror="this.src='https://via.placeholder.com/300x220.png?text=صورة+غير+متوفرة'">
                     ${product.isFeatured ? '<span class="featured-badge">مميز</span>' : ''}
                 </div>
@@ -748,7 +703,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     showAlert(data.message, 'error');
                 }
             } catch (error) {
-                showAlert('فشل نشر الإعلان', 'error');
+                console.error('❌ خطأ في نشر الإعلان:', error);
+                showAlert(error.message || 'فشل نشر الإعلان', 'error');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
@@ -769,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('✅ السكربت يعمل بشكل صحيح');
             }
         } catch (error) {
-            console.warn('⚠️ تحذير: هناك مشكلة في الاتصال بالسكربت');
+            console.warn('⚠️ تحذير: هناك مشكلة في الاتصال بالسكربت:', error.message);
         }
         
         // تحميل البيانات
@@ -786,8 +742,12 @@ document.addEventListener('DOMContentLoaded', () => {
             testBtn.style.background = '#9b59b6';
             
             testBtn.addEventListener('click', async () => {
-                const result = await makeRequest('test');
-                alert(JSON.stringify(result, null, 2));
+                try {
+                    const result = await makeRequest('ping');
+                    alert(JSON.stringify(result, null, 2));
+                } catch (error) {
+                    alert('خطأ: ' + error.message);
+                }
             });
             
             mainNav.appendChild(testBtn);
@@ -800,5 +760,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // إضافة دوال عامة للاستخدام من HTML
 window.fetchAndDisplayProducts = function() {
-    document.dispatchEvent(new Event('DOMContentLoaded'));
+    window.location.reload();
 };
