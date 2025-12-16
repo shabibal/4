@@ -19,8 +19,12 @@
                 <a href="javascript:void(0);" class="btn-contact" onclick="redirectToInstagram()">
                     <i class="fas fa-bullhorn"></i> التواصل لنشر إعلانك
                 </a>
-                <!-- زر دخول الإدارة -->
-                <a href="javascript:void(0);" id="adminLoginTrigger" class="admin-login-trigger">
+                <!-- زر تسجيل الدخول الرئيسي -->
+                <a href="javascript:void(0);" class="login-btn" onclick="openAuthModal()">
+                    <i class="fas fa-user"></i> تسجيل دخول
+                </a>
+                <!-- زر دخول الإدارة (مخفي إلا للمدير) -->
+                <a href="javascript:void(0);" id="adminLoginTrigger" class="admin-login-trigger" style="display: none;">
                     <i class="fas fa-user-cog"></i>
                 </a>
             </div>
@@ -57,8 +61,8 @@
         </div>
     </div>
 
-    <!-- نافذة الإدارة -->
-    <div id="adminPanel" class="admin-panel">
+    <!-- نافذة الإدارة (ستظهر فقط للمدير) -->
+    <div id="adminPanel" class="admin-panel" style="display: none;">
         <div class="admin-header">
             <h2><i class="fas fa-cogs"></i> لوحة تحكم الإدارة</h2>
             <button class="btn-logout" onclick="logoutAdmin()">تسجيل خروج <i class="fas fa-sign-out-alt"></i></button>
@@ -187,6 +191,9 @@
                 <a href="javascript:void(0);" class="btn btn-secondary" onclick="redirectToInstagram()">
                     اطلع نشر إعلان <i class="fab fa-instagram"></i>
                 </a>
+                <a href="javascript:void(0);" class="btn btn-primary" onclick="openAuthModal()">
+                    <i class="fas fa-user-plus"></i> انشاء حساب جديد
+                </a>
             </div>
         </div>
         <div class="hero-image">
@@ -211,6 +218,9 @@
                 <div class="step-icon">1</div>
                 <h3>انشاء حساب</h3>
                 <p>سجل في الموقع ببياناتك الأساسية.</p>
+                <a href="javascript:void(0);" onclick="openAuthModal()" style="color: #4361ee; font-weight: 600; margin-top: 10px; display: inline-block;">
+                    <i class="fas fa-user-plus"></i> انشاء حساب الآن
+                </a>
             </div>
             <div class="step">
                 <div class="step-icon">2</div>
@@ -241,6 +251,11 @@
                 <a href="#"><i class="fab fa-facebook"></i></a>
             </div>
             <p class="copyright">© 2023 ويب أيديا. جميع الحقوق محفوظة.</p>
+            <div style="margin-top: 20px;">
+                <a href="javascript:void(0);" onclick="openAuthModal()" style="color: white; text-decoration: underline;">
+                    <i class="fas fa-user"></i> تسجيل الدخول
+                </a>
+            </div>
         </div>
     </footer>
 
