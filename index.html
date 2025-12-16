@@ -3,315 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>webaidea - منصة التجارة الإلكترونية</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Webaidea - سوق التجار الإلكتروني</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- شريط التنقل -->
+    <!-- شريط التنقل العلوي -->
     <nav class="navbar">
-        <div class="container">
-            <div class="nav-logo">
-                <h1>webaidea</h1>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Webaidea</a>
+            <div class="nav-links">
+                <a href="#products">المنتجات</a>
+                <a href="#how-it-works">كيفية العمل</a>
+                <a href="javascript:void(0);" class="btn-contact" onclick="redirectToInstagram()">
+                    <i class="fas fa-bullhorn"></i> التواصل لنشر إعلانك
+                </a>
+                <!-- زر دخول الإدارة -->
+                <a href="javascript:void(0);" id="adminLoginTrigger" class="admin-login-trigger">
+                    <i class="fas fa-user-cog"></i>
+                </a>
             </div>
-            <div class="nav-menu">
-                <ul>
-                    <li><a href="#home">الرئيسية</a></li>
-                    <li><a href="#products">المنتجات</a></li>
-                    <li><a href="#contact">التواصل</a></li>
-                    <li><a href="#" id="loginBtn">تسجيل الدخول</a></li>
-                </ul>
-            </div>
-            <div class="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </nav>
 
-    <!-- القسم الرئيسي -->
-    <section id="home" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h2>منصة متكاملة لعرض منتجاتك</h2>
-                <p>انضم إلينا اليوم واعرض منتجاتك لآلاف المستخدمين</p>
-                <a href="#contact" class="btn btn-primary">تواصل معنا لنشر إعلانك</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- قسم المنتجات -->
-    <section id="products" class="products">
-        <div class="container">
-            <h2 class="section-title">المنتجات المعروضة</h2>
-            <div class="product-filters">
-                <button class="filter-btn active" data-filter="all">الكل</button>
-                <button class="filter-btn" data-filter="featured">مميز</button>
-                <button class="filter-btn" data-filter="normal">عادي</button>
-            </div>
-            <div class="products-grid" id="productsGrid">
-                <!-- سيتم إضافة المنتجات هنا عبر JavaScript -->
-            </div>
-            <div class="load-more">
-                <button id="loadMoreBtn" class="btn btn-secondary">عرض المزيد</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- قسم التواصل -->
-    <section id="contact" class="contact">
-        <div class="container">
-            <h2 class="section-title">تواصل معنا</h2>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <h3>لنشر إعلانك</h3>
-                    <p>تواصل معنا عبر إنستغرام لنشر منتجاتك على منصتنا</p>
-                    <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" target="_blank" class="btn btn-primary">
-                        <i class="fab fa-instagram"></i> تابعنا على إنستغرام
-                    </a>
-                </div>
-                <div class="contact-form">
-                    <h3>أو أرسل لنا رسالة</h3>
-                    <form id="contactForm">
-                        <div class="form-group">
-                            <input type="text" id="name" placeholder="الاسم الكامل" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" id="email" placeholder="البريد الإلكتروني" required>
-                        </div>
-                        <div class="form-group">
-                            <textarea id="message" placeholder="رسالتك" rows="5" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">إرسال الرسالة</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- نموذج تسجيل الدخول -->
-    <div class="modal" id="loginModal">
+    <!-- نموذج تسجيل الدخول / تسجيل جديد -->
+    <div id="authModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>تسجيل الدخول</h2>
-            <form id="loginForm">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">تسجيل الدخول</h2>
+            <form id="authForm" onsubmit="handleAuth(event)">
                 <div class="form-group">
-                    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+                    <label for="email">البريد الإلكتروني</label>
+                    <input type="email" id="email" name="email" required>
                 </div>
                 <div class="form-group">
-                    <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                    <label for="password">كلمة المرور</label>
+                    <input type="password" id="password" name="password" required>
                 </div>
-                <button type="submit" class="btn btn-primary">دخول</button>
-                <p class="register-link">ليس لديك حساب؟ <a href="#" id="showRegisterForm">سجل الآن</a></p>
+                <div class="form-group" id="nameField" style="display: none;">
+                    <label for="name">الاسم الكامل</label>
+                    <input type="text" id="name" name="name">
+                </div>
+                <button type="submit" class="btn-submit" id="submitBtn">دخول</button>
             </form>
+            <p class="switch-mode">
+                <span id="switchText">ليس لديك حساب؟</span>
+                <a href="javascript:void(0);" onclick="switchAuthMode()" id="switchLink">انشاء حساب جديد</a>
+            </p>
         </div>
     </div>
 
-    <!-- نموذج التسجيل -->
-    <div class="modal" id="registerModal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>إنشاء حساب جديد</h2>
-            <form id="registerForm">
-                <div class="form-group">
-                    <input type="text" id="registerName" placeholder="الاسم الكامل" required>
-                </div>
-                <div class="form-group">
-                    <input type="email" id="registerEmail" placeholder="البريد الإلكتروني" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" id="registerPassword" placeholder="كلمة المرور" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" id="confirmPassword" placeholder="تأكيد كلمة المرور" required>
-                </div>
-                <button type="submit" class="btn btn-primary">إنشاء حساب</button>
-                <p class="register-link">لديك حساب بالفعل؟ <a href="#" id="showLoginForm">سجل دخول</a></p>
-            </form>
-        </div>
-    </div>
-
-    <!-- نموذج إضافة منتج (للتجار المعتمدين) -->
-    <div class="modal" id="addProductModal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>نشر إعلان جديد</h2>
-            <form id="addProductForm">
-                <div class="form-group">
-                    <label for="productType">نوع الإعلان</label>
-                    <select id="productType">
-                        <option value="normal">إعلان عادي</option>
-                        <option value="featured" id="featuredOption" disabled>إعلان مميز (للإدارة فقط)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="productName">اسم المنتج</label>
-                    <input type="text" id="productName" required>
-                </div>
-                <div class="form-group">
-                    <label for="productPrice">السعر</label>
-                    <input type="number" id="productPrice" required>
-                </div>
-                <div class="form-group">
-                    <label for="productContact">رقم التواصل</label>
-                    <input type="tel" id="productContact" required>
-                </div>
-                <div class="form-group">
-                    <label for="productDescription">وصف المنتج</label>
-                    <textarea id="productDescription" rows="4" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="productImage">صورة المنتج</label>
-                    <input type="file" id="productImage" accept="image/*">
-                    <div class="image-preview" id="imagePreview"></div>
-                </div>
-                <button type="submit" class="btn btn-primary">نشر الإعلان</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- صفحة الإدارة (مخفية) -->
-    <div class="admin-panel" id="adminPanel">
+    <!-- نافذة الإدارة -->
+    <div id="adminPanel" class="admin-panel">
         <div class="admin-header">
-            <div class="container">
-                <h2>لوحة التحكم - webaidea</h2>
-                <button id="logoutBtn" class="btn btn-secondary">تسجيل الخروج</button>
-            </div>
+            <h2><i class="fas fa-cogs"></i> لوحة تحكم الإدارة</h2>
+            <button class="btn-logout" onclick="logoutAdmin()">تسجيل خروج <i class="fas fa-sign-out-alt"></i></button>
+        </div>
+        <div class="admin-tabs">
+            <button class="tab-link active" onclick="openAdminTab(event, 'tabMerchants')">التجار</button>
+            <button class="tab-link" onclick="openAdminTab(event, 'tabAccounts')">الحسابات</button>
+            <button class="tab-link" onclick="openAdminTab(event, 'tabAds')">الإعلانات المنشورة</button>
+            <button class="tab-link" onclick="openAdminTab(event, 'tabPostAd')">نشر إعلان</button>
         </div>
         <div class="admin-content">
-            <div class="container">
-                <div class="admin-tabs">
-                    <button class="tab-btn active" data-tab="merchants">التجار</button>
-                    <button class="tab-btn" data-tab="accounts">الحسابات</button>
-                    <button class="tab-btn" data-tab="ads">الإعلانات المنشورة</button>
-                    <button class="tab-btn" data-tab="newAd">نشر إعلان</button>
+            <!-- تبويب التجار -->
+            <div id="tabMerchants" class="tab-content active-tab">
+                <h3><i class="fas fa-user-tie"></i> قائمة التجار المعتمدين</h3>
+                <p>الحسابات التي يمكنها نشر الإعلانات.</p>
+                <div class="search-box">
+                    <input type="text" id="searchMerchant" placeholder="البحث عن تاجر بالبريد أو الاسم..." onkeyup="searchTable('merchantsTable', this.value)">
+                    <i class="fas fa-search"></i>
                 </div>
+                <div class="table-container">
+                    <table id="merchantsTable">
+                        <thead>
+                            <tr><th>الاسم</th><th>البريد الإلكتروني</th><th>تاريخ الانضمام</th><th>عدد الإعلانات</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- تبويب الحسابات -->
+            <div id="tabAccounts" class="tab-content">
+                <h3><i class="fas fa-users"></i> جميع الحسابات المسجلة</h3>
+                <p>يمكنك ترقية أي حساب إلى "تاجر".</p>
+                <div class="search-box">
+                    <input type="text" id="searchAccount" placeholder="البحث عن حساب بالبريد..." onkeyup="searchTable('accountsTable', this.value)">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="table-container">
+                    <table id="accountsTable">
+                        <thead>
+                            <tr><th>الاسم</th><th>البريد الإلكتروني</th><th>نوع الحساب</th><th>تاريخ التسجيل</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- تبويب الإعلانات -->
+            <div id="tabAds" class="tab-content">
+                <h3><i class="fas fa-list-alt"></i> جميع الإعلانات المنشورة</h3>
+                <p>عرض جميع المنتجات المعروضة في الموقع.</p>
+                <div class="search-box">
+                    <input type="text" id="searchAd" placeholder="البحث في الإعلانات..." onkeyup="searchTable('adsTable', this.value)">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="table-container">
+                    <table id="adsTable">
+                        <thead>
+                            <tr><th>صورة</th><th>اسم المنتج</th><th>السعر (ريال)</th><th>التاجر</th><th>تاريخ النشر</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- تبويب نشر إعلان جديد -->
+            <div id="tabPostAd" class="tab-content">
+                <h3><i class="fas fa-plus-circle"></i> نشر إعلان جديد (مميز)</h3>
+                <p class="special-notice"><i class="fas fa-crown"></i> هذا الإعلان سيكون بارزًا ومميزًا في الصفحة الرئيسية. للنشر من قبل الإدارة فقط.</p>
                 
-                <!-- تبويب التجار -->
-                <div class="tab-content active" id="merchants">
-                    <h3>التجار المعتمدون</h3>
-                    <div class="search-box">
-                        <input type="text" id="merchantSearch" placeholder="البحث عن تاجر...">
-                    </div>
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>الاسم</th>
-                                    <th>البريد الإلكتروني</th>
-                                    <th>تاريخ الإضافة</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="merchantsTable">
-                                <!-- سيتم إضافة البيانات عبر JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- تبويب الحسابات -->
-                <div class="tab-content" id="accounts">
-                    <h3>جميع الحسابات</h3>
-                    <div class="search-box">
-                        <input type="text" id="accountSearch" placeholder="البحث عن حساب بالبريد الإلكتروني...">
-                    </div>
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>الاسم</th>
-                                    <th>البريد الإلكتروني</th>
-                                    <th>تاريخ التسجيل</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="accountsTable">
-                                <!-- سيتم إضافة البيانات عبر JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- تبويب الإعلانات -->
-                <div class="tab-content" id="ads">
-                    <h3>الإعلانات المنشورة</h3>
-                    <div class="search-box">
-                        <input type="text" id="adSearch" placeholder="البحث عن إعلان...">
-                    </div>
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>اسم المنتج</th>
-                                    <th>السعر</th>
-                                    <th>صاحب الإعلان</th>
-                                    <th>التاريخ</th>
-                                    <th>النوع</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adsTable">
-                                <!-- سيتم إضافة البيانات عبر JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- تبويب نشر إعلان -->
-                <div class="tab-content" id="newAd">
-                    <h3>نشر إعلان جديد</h3>
-                    <form id="adminAddProductForm">
+                <form id="adminAdForm" onsubmit="postAdminAd(event)">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="adminProductType">نوع الإعلان</label>
-                            <select id="adminProductType">
-                                <option value="normal">إعلان عادي</option>
-                                <option value="featured">إعلان مميز</option>
-                            </select>
+                            <label for="adTitle">عنوان المنتج *</label>
+                            <input type="text" id="adTitle" required>
                         </div>
                         <div class="form-group">
-                            <label for="adminProductName">اسم المنتج</label>
-                            <input type="text" id="adminProductName" required>
+                            <label for="adPrice">السعر (ريال) *</label>
+                            <input type="number" id="adPrice" required>
                         </div>
-                        <div class="form-group">
-                            <label for="adminProductPrice">السعر</label>
-                            <input type="number" id="adminProductPrice" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adDescription">وصف المنتج *</label>
+                        <textarea id="adDescription" rows="4" required></textarea>
+                    </div>
+                    
+                    <!-- حقل رفع الصورة -->
+                    <div class="form-group">
+                        <label for="productImage">صورة المنتج *</label>
+                        <div class="image-upload-container">
+                            <input type="file" id="productImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('productImage').click()">
+                                <i class="fas fa-upload"></i> اختر صورة
+                            </button>
+                            <div class="image-preview" id="imagePreview">
+                                <i class="fas fa-image" style="font-size: 3rem; color: #ccc;"></i>
+                                <p style="color: #999; margin-top: 10px;">لم يتم اختيار صورة</p>
+                            </div>
+                            <input type="hidden" id="imageData">
                         </div>
-                        <div class="form-group">
-                            <label for="adminProductContact">رقم التواصل</label>
-                            <input type="tel" id="adminProductContact" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="adminProductDescription">وصف المنتج</label>
-                            <textarea id="adminProductDescription" rows="4" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="adminProductImage">صورة المنتج</label>
-                            <input type="file" id="adminProductImage" accept="image/*">
-                            <div class="image-preview" id="adminImagePreview"></div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">نشر الإعلان</button>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adContact">رقم التواصل *</label>
+                        <input type="tel" id="adContact" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adMerchant">الناشر (التاجر)</label>
+                        <select id="adMerchant">
+                            <option value="">-- اختر تاجر --</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> نشر الإعلان المميز</button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- رسائل التنبيه -->
-    <div class="notification" id="notification">
-        <div class="notification-content">
-            <span id="notificationMessage"></span>
-            <button class="notification-close">&times;</button>
+    <!-- قسم الهيرو -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>سوق <span class="highlight">ويب أيديا</span> للإعلانات</h1>
+            <p>المنصة الأمثل للتجار لعرض منتجاتهم ووصولها لأكبر شريحة من العملاء. انشر إعلانك بكل سهولة بعد الموافقة الإدارية.</p>
+            <div class="hero-buttons">
+                <a href="#products" class="btn btn-primary">استعرض المنتجات</a>
+                <a href="javascript:void(0);" class="btn btn-secondary" onclick="redirectToInstagram()">
+                    اطلع نشر إعلان <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="منصة ويب أيديا">
+        </div>
+    </header>
+
+    <!-- قسم المنتجات -->
+    <section id="products" class="products-section">
+        <div class="section-header">
+            <h2>الإعلانات المنشورة</h2>
+            <p>استعرض أحدث المنتجات المعروضة من قبل تجارنا المعتمدين.</p>
+        </div>
+        <div class="products-container" id="productsContainer"></div>
+    </section>
+
+    <!-- قسم كيفية العمل -->
+    <section id="how-it-works" class="how-section">
+        <h2>كيف تعمل المنصة؟</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-icon">1</div>
+                <h3>انشاء حساب</h3>
+                <p>سجل في الموقع ببياناتك الأساسية.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">2</div>
+                <h3>التواصل لطلب النشر</h3>
+                <p>اضغط على زر "التواصل لنشر إعلانك" للتواصل مع الإدارة عبر الإنستجرام.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">3</div>
+                <h3>انتظار الموافقة</h3>
+                <p>ستقوم الإدارة بمراجعة طلبك وترقية حسابك إلى "تاجر".</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">4</div>
+                <h3>بدء النشر</h3>
+                <p>بعد الموافقة، يمكنك تسجيل الدخول وإضافة منتجاتك وعرضها للجميع.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">Webaidea</div>
+            <p>منصة رائدة لتجارة إلكترونية آمنة ومنظمة. نربط التجار بالعملاء بثقة وسهولة.</p>
+            <div class="footer-links">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-facebook"></i></a>
+            </div>
+            <p class="copyright">© 2023 ويب أيديا. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <!-- نافذة عرض المنتج بالتفصيل -->
+    <div id="productDetailModal" class="modal detail-modal">
+        <div class="modal-content detail-content">
+            <span class="close-detail" onclick="closeDetailModal()">&times;</span>
+            <div class="detail-body" id="detailBody"></div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-app.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-auth.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-firestore.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-storage.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

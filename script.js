@@ -1,772 +1,791 @@
-// إعدادات Firebase
-const firebaseConfig = {
-    apiKey: "AKfycbxFuMZK64X-7aI6Ivt2Wv-QKzO1IuQKbRiEW2HK2qLm9RBzlcIgNopO3cmuaXyKeoyGvQ",
-    authDomain: "https://docs.google.com/spreadsheets/d/1eNwXAmrzbNUfgt7gUCpgPW-vZ-BeLmTyedcNP-iTpb8/edit?usp=sharing",
-    projectId: "webaidea",
-    storageBucket: "webaidea.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:123456789"
-};
+// Webaidea Platform - JavaScript with Google Sheets Integration
+const API_URL = 'https://script.google.com/macros/s/AKfycbwmuYZ0DhFYL9DwgK-MqI8IisyV6IZX7VjOGcXyIHIvSO3EoF92Pz2kGrujRoAZp31-EQ/exec';
 
-// تهيئة Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+// بيانات محلية للكاش
+let users = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+let products = JSON.parse(localStorage.getItem('webaidea_products')) || [];
+let currentUser = JSON.parse(localStorage.getItem('webaidea_currentUser')) || null;
+let isAdminLoggedIn = JSON.parse(localStorage.getItem('webaidea_adminLoggedIn')) || false;
 
-// متغيرات عامة
-let currentUser = null;
-let isAdmin = false;
-let products = [];
-let merchants = [];
-let users = [];
-let filteredProducts = [];
-let currentPage = 1;
-const productsPerPage = 6;
-
-// عناصر DOM
-const loginBtn = document.getElementById('loginBtn');
-const loginModal = document.getElementById('loginModal');
-const registerModal = document.getElementById('registerModal');
-const addProductModal = document.getElementById('addProductModal');
-const adminPanel = document.getElementById('adminPanel');
-const notification = document.getElementById('notification');
-const notificationMessage = document.getElementById('notificationMessage');
-const productsGrid = document.getElementById('productsGrid');
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const scrollToTopBtn = document.createElement('div');
-scrollToTopBtn.className = 'scroll-to-top';
-scrollToTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
-document.body.appendChild(scrollToTopBtn);
-
-// أحداث DOM
-document.addEventListener('DOMContentLoaded', () => {
-    // التحقق من تسجيل الدخول
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            checkIfAdmin(user.email);
-            
-            // تغيير زر تسجيل الدخول
-            loginBtn.textContent = 'حسابي';
-            loginBtn.addEventListener('click', () => {
-                if (isAdmin) {
-                    showAdminPanel();
-                } else {
-                    showAddProductModal();
-                }
-            });
-        } else {
-            loginBtn.textContent = 'تسجيل الدخول';
-            loginBtn.addEventListener('click', showLoginModal);
+// تهيئة الموقع عند التحميل
+document.addEventListener('DOMContentLoaded', async function() {
+    await checkAdminStatus();
+    await loadInitialData();
+    
+    if (currentUser) {
+        document.getElementById('adminLoginTrigger').style.display = 'flex';
+    }
+    
+    // إعداد حدث لزر دخول الإدارة
+    document.getElementById('adminLoginTrigger').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentUser || confirm('يجب تسجيل الدخول أولاً. هل تريد فتح نافذة التسجيل؟')) {
+            openAuthModal();
         }
     });
-
-    // تحميل المنتجات
-    loadProducts();
-    
-    // إعداد أحداث الأزرار
-    setupEventListeners();
-    
-    // إعداد تأثيرات التمرير
-    setupScrollEffects();
 });
 
-// إعداد أحداث الأزرار
-function setupEventListeners() {
-    // زر الهامبرجر
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    hamburger.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-    });
-    
-    // أزرار إغلاق النوافذ المنبثقة
-    document.querySelectorAll('.close').forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.closest('.modal').style.display = 'none';
-        });
-    });
-    
-    // النقر خارج النافذة المنبثقة لإغلاقها
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none';
-        }
-    });
-    
-    // نموذج تسجيل الدخول
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        
-        // التحقق إذا كان حساب الإدارة
-        if (email === 'msdfrrt@gmail.com' && password === 'Shabib95873061@99') {
-            isAdmin = true;
-            showAdminPanel();
-            loginModal.style.display = 'none';
-            showNotification('تم تسجيل الدخول بنجاح', 'success');
-        } else {
-            // تسجيل الدخول العادي عبر Firebase
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    loginModal.style.display = 'none';
-                    showNotification('تم تسجيل الدخول بنجاح', 'success');
-                })
-                .catch(error => {
-                    showNotification(error.message, 'error');
-                });
-        }
-    });
-    
-    // نموذج التسجيل
-    document.getElementById('registerForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = document.getElementById('registerName').value;
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        
-        if (password !== confirmPassword) {
-            showNotification('كلمات المرور غير متطابقة', 'error');
-            return;
-        }
-        
-        auth.createUserWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                // حفظ بيانات المستخدم في Firestore
-                db.collection('users').doc(userCredential.user.uid).set({
-                    name,
-                    email,
-                    isMerchant: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                registerModal.style.display = 'none';
-                showNotification('تم إنشاء الحساب بنجاح', 'success');
-            })
-            .catch(error => {
-                showNotification(error.message, 'error');
-            });
-    });
-    
-    // التبديل بين نموذجي تسجيل الدخول والتسجيل
-    document.getElementById('showRegisterForm').addEventListener('click', (e) => {
-        e.preventDefault();
-        loginModal.style.display = 'none';
-        registerModal.style.display = 'block';
-    });
-    
-    document.getElementById('showLoginForm').addEventListener('click', (e) => {
-        e.preventDefault();
-        registerModal.style.display = 'none';
-        loginModal.style.display = 'block';
-    });
-    
-    // نموذج إضافة منتج (للتجار)
-    document.getElementById('addProductForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        addProduct('merchant');
-    });
-    
-    // نموذج إضافة منتج (للإدارة)
-    document.getElementById('adminAddProductForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        addProduct('admin');
-    });
-    
-    // أزرار التصفية
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            const filter = btn.getAttribute('data-filter');
-            filterProducts(filter);
-        });
-    });
-    
-    // زر عرض المزيد
-    loadMoreBtn.addEventListener('click', () => {
-        currentPage++;
-        displayProducts();
-    });
-    
-    // معاينة الصورة
-    document.getElementById('productImage').addEventListener('change', (e) => {
-        previewImage(e.target, 'imagePreview');
-    });
-    
-    document.getElementById('adminProductImage').addEventListener('change', (e) => {
-        previewImage(e.target, 'adminImagePreview');
-    });
-    
-    // نموذج التواصل
-    document.getElementById('contactForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const message = document.getElementById('message').value;
-        
-        // حفظ الرسالة في Firestore
-        db.collection('messages').add({
-            name,
-            email,
-            message,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        showNotification('تم إرسال رسالتك بنجاح', 'success');
-        document.getElementById('contactForm').reset();
-    });
-    
-    // تبويبات لوحة التحكم
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.getAttribute('data-tab');
-            
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            btn.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-            
-            // تحميل البيانات حسب التبويب
-            if (tabId === 'merchants') {
-                loadMerchants();
-            } else if (tabId === 'accounts') {
-                loadUsers();
-            } else if (tabId === 'ads') {
-                loadProductsForAdmin();
-            }
-        });
-    });
-    
-    // البحث في التجار
-    document.getElementById('merchantSearch').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        filterTable('merchantsTable', searchTerm);
-    });
-    
-    // البحث في الحسابات
-    document.getElementById('accountSearch').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        filterTable('accountsTable', searchTerm);
-    });
-    
-    // البحث في الإعلانات
-    document.getElementById('adSearch').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        filterTable('adsTable', searchTerm);
-    });
-    
-    // زر تسجيل الخروج
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut().then(() => {
-            isAdmin = false;
-            adminPanel.style.display = 'none';
-            document.querySelector('main').style.display = 'block';
-            showNotification('تم تسجيل الخروج بنجاح', 'success');
-        });
-    });
-    
-    // زر التمرير للأعلى
-    scrollToTopBtn.addEventListener('click', () => {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-}
-
-// إعداد تأثيرات التمرير
-function setupScrollEffects() {
-    window.addEventListener('scroll', () => {
-        // إظهار/إخفاء زر التمرير للأعلى
-        if (window.pageYOffset > 300) {
-            scrollToTopBtn.classList.add('visible');
-        } else {
-            scrollToTopBtn.classList.remove('visible');
-        }
-        
-        // تأثير التلاشي للعناصر
-        document.querySelectorAll('.fade-in').forEach(element => {
-            const elementTop = element.getBoundingClientRect().top;
-            const elementBottom = element.getBoundingClientRect().bottom;
-            
-            if (elementTop < window.innerHeight && elementBottom > 0) {
-                element.classList.add('visible');
-            }
-        });
-    });
-}
-
-// عرض نافذة تسجيل الدخول
-function showLoginModal() {
-    loginModal.style.display = 'block';
-}
-
-// عرض نافذة إضافة منتج
-function showAddProductModal() {
-    // التحقق إذا كان المستخدم تاجرًا
-    if (currentUser) {
-        db.collection('users').doc(currentUser.uid).get()
-            .then(doc => {
-                if (doc.exists && doc.data().isMerchant) {
-                    addProductModal.style.display = 'block';
-                } else {
-                    showNotification('يجب أن تكون تاجرًا معتمدًا لنشر إعلان', 'warning');
-                }
-            })
-            .catch(error => {
-                showNotification(error.message, 'error');
-            });
-    }
-}
-
-// عرض لوحة التحكم
-function showAdminPanel() {
-    adminPanel.style.display = 'block';
-    document.querySelector('main').style.display = 'none';
-    
-    // تحميل البيانات الأولية
-    loadMerchants();
-}
-
-// التحقق إذا كان المستخدم إدارة
-function checkIfAdmin(email) {
-    if (email === 'msdfrrt@gmail.com') {
-        isAdmin = true;
-    }
-}
-
-// تحميل المنتجات
-function loadProducts() {
-    db.collection('products').orderBy('createdAt', 'desc').get()
-        .then(snapshot => {
-            products = [];
-            snapshot.forEach(doc => {
-                products.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
-            
-            filteredProducts = [...products];
-            displayProducts();
-        })
-        .catch(error => {
-            showNotification(error.message, 'error');
-        });
-}
-
-// عرض المنتجات
-function displayProducts() {
-    productsGrid.innerHTML = '';
-    
-    const startIndex = (currentPage - 1) * productsPerPage;
-    const endIndex = startIndex + productsPerPage;
-    const productsToShow = filteredProducts.slice(0, endIndex);
-    
-    productsToShow.forEach(product => {
-        const productCard = createProductCard(product);
-        productsGrid.appendChild(productCard);
-    });
-    
-    // إخفاء زر عرض المزيد إذا تم عرض كل المنتجات
-    if (productsToShow.length >= filteredProducts.length) {
-        loadMoreBtn.style.display = 'none';
+// التحقق من حالة دخول المدير
+async function checkAdminStatus() {
+    const adminPanel = document.getElementById('adminPanel');
+    if (isAdminLoggedIn) {
+        adminPanel.style.display = 'block';
+        document.querySelector('.hero').style.display = 'none';
+        document.querySelector('.products-section').style.display = 'none';
+        document.querySelector('.how-section').style.display = 'none';
+        document.querySelector('.footer').style.display = 'none';
+        document.querySelector('.navbar').style.display = 'none';
     } else {
-        loadMoreBtn.style.display = 'block';
+        adminPanel.style.display = 'none';
+        document.querySelector('.hero').style.display = 'flex';
+        document.querySelector('.products-section').style.display = 'block';
+        document.querySelector('.how-section').style.display = 'block';
+        document.querySelector('.footer').style.display = 'block';
+        document.querySelector('.navbar').style.display = 'block';
     }
 }
 
-// إنشاء بطاقة منتج
-function createProductCard(product) {
-    const card = document.createElement('div');
-    card.className = 'product-card fade-in';
-    
-    const badge = product.isFeatured ? '<div class="product-badge">مميز</div>' : '';
-    
-    card.innerHTML = `
-        ${badge}
-        <div class="product-image">
-            <img src="${product.image || 'https://picsum.photos/seed/' + product.id + '/400/300.jpg'}" alt="${product.name}">
-        </div>
-        <div class="product-info">
-            <h3>${product.name}</h3>
-            <div class="product-price">${product.price} ريال</div>
-            <p class="product-description">${product.description}</p>
-            <div class="product-contact">
-                <span>${product.contact}</span>
-                <a href="tel:${product.contact}"><i class="fas fa-phone"></i> اتصل</a>
-            </div>
-        </div>
-    `;
-    
-    return card;
-}
-
-// تصفية المنتجات
-function filterProducts(filter) {
-    if (filter === 'all') {
-        filteredProducts = [...products];
-    } else if (filter === 'featured') {
-        filteredProducts = products.filter(product => product.isFeatured);
-    } else if (filter === 'normal') {
-        filteredProducts = products.filter(product => !product.isFeatured);
-    }
-    
-    currentPage = 1;
-    displayProducts();
-}
-
-// إضافة منتج
-function addProduct(userType) {
-    const type = userType === 'admin' ? 'admin' : 'merchant';
-    const productType = document.getElementById(`${type}ProductType`).value;
-    const name = document.getElementById(`${type}ProductName`).value;
-    const price = document.getElementById(`${type}ProductPrice`).value;
-    const contact = document.getElementById(`${type}ProductContact`).value;
-    const description = document.getElementById(`${type}ProductDescription`).value;
-    const imageInput = document.getElementById(`${type}ProductImage`);
-    
-    // التحقق من الحقول
-    if (!name || !price || !contact || !description) {
-        showNotification('يرجى ملء جميع الحقول', 'error');
-        return;
-    }
-    
-    // رفع الصورة إذا تم تحديدها
-    if (imageInput.files && imageInput.files[0]) {
-        const imageFile = imageInput.files[0];
-        const storageRef = storage.ref(`products/${Date.now()}_${imageFile.name}`);
+// تحميل البيانات الأولية
+async function loadInitialData() {
+    try {
+        const [productsResponse, usersResponse] = await Promise.all([
+            fetchData('getProducts'),
+            fetchData('getUsers')
+        ]);
         
-        storageRef.put(imageFile)
-            .then(snapshot => {
-                return snapshot.ref.getDownloadURL();
-            })
-            .then(imageUrl => {
-                saveProductToDatabase(productType, name, price, contact, description, imageUrl);
-            })
-            .catch(error => {
-                showNotification(error.message, 'error');
-            });
-    } else {
-        saveProductToDatabase(productType, name, price, contact, description, null);
-    }
-}
-
-// حفظ المنتج في قاعدة البيانات
-function saveProductToDatabase(type, name, price, contact, description, imageUrl) {
-    const isFeatured = type === 'featured';
-    const userId = currentUser ? currentUser.uid : null;
-    
-    db.collection('products').add({
-        name,
-        price,
-        contact,
-        description,
-        image: imageUrl,
-        isFeatured,
-        userId,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => {
-        // إغلاق النافذة المنبثقة
-        if (isAdmin) {
-            document.getElementById('adminAddProductForm').reset();
-            document.getElementById('adminImagePreview').innerHTML = '';
-            loadProductsForAdmin();
-        } else {
-            addProductModal.style.display = 'none';
-            document.getElementById('addProductForm').reset();
-            document.getElementById('imagePreview').innerHTML = '';
-            loadProducts();
+        if (productsResponse.status === 200) {
+            products = productsResponse.data || [];
+            localStorage.setItem('webaidea_products', JSON.stringify(products));
         }
         
-        showNotification('تم نشر الإعلان بنجاح', 'success');
-    })
-    .catch(error => {
-        showNotification(error.message, 'error');
-    });
-}
-
-// تحميل التجار
-function loadMerchants() {
-    db.collection('users').where('isMerchant', '==', true).get()
-        .then(snapshot => {
-            merchants = [];
-            const merchantsTable = document.getElementById('merchantsTable');
-            merchantsTable.innerHTML = '';
-            
-            snapshot.forEach(doc => {
-                const merchant = {
-                    id: doc.id,
-                    ...doc.data()
-                };
-                merchants.push(merchant);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${merchant.name}</td>
-                    <td>${merchant.email}</td>
-                    <td>${formatDate(merchant.createdAt)}</td>
-                    <td>
-                        <button class="action-btn delete" onclick="removeMerchant('${merchant.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                merchantsTable.appendChild(row);
-            });
-        })
-        .catch(error => {
-            showNotification(error.message, 'error');
-        });
-}
-
-// تحميل المستخدمين
-function loadUsers() {
-    db.collection('users').get()
-        .then(snapshot => {
-            users = [];
-            const accountsTable = document.getElementById('accountsTable');
-            accountsTable.innerHTML = '';
-            
-            snapshot.forEach(doc => {
-                const user = {
-                    id: doc.id,
-                    ...doc.data()
-                };
-                users.push(user);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td>${formatDate(user.createdAt)}</td>
-                    <td>
-                        ${!user.isMerchant ? `
-                            <button class="action-btn" onclick="makeMerchant('${user.id}')">
-                                <i class="fas fa-user-check"></i>
-                            </button>
-                        ` : `
-                            <button class="action-btn delete" onclick="removeMerchant('${user.id}')">
-                                <i class="fas fa-user-times"></i>
-                            </button>
-                        `}
-                    </td>
-                `;
-                accountsTable.appendChild(row);
-            });
-        })
-        .catch(error => {
-            showNotification(error.message, 'error');
-        });
-}
-
-// تحميل المنتجات للإدارة
-function loadProductsForAdmin() {
-    db.collection('products').orderBy('createdAt', 'desc').get()
-        .then(snapshot => {
-            const adsTable = document.getElementById('adsTable');
-            adsTable.innerHTML = '';
-            
-            snapshot.forEach(doc => {
-                const product = {
-                    id: doc.id,
-                    ...doc.data()
-                };
-                
-                // البحث عن اسم صاحب الإعلان
-                let userName = 'غير معروف';
-                if (product.userId) {
-                    const user = users.find(u => u.id === product.userId);
-                    if (user) {
-                        userName = user.name;
-                    }
-                }
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${product.name}</td>
-                    <td>${product.price} ريال</td>
-                    <td>${userName}</td>
-                    <td>${formatDate(product.createdAt)}</td>
-                    <td>${product.isFeatured ? 'مميز' : 'عادي'}</td>
-                    <td>
-                        <button class="action-btn delete" onclick="deleteProduct('${product.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                adsTable.appendChild(row);
-            });
-        })
-        .catch(error => {
-            showNotification(error.message, 'error');
-        });
-}
-
-// جعل المستخدم تاجرًا
-function makeMerchant(userId) {
-    db.collection('users').doc(userId).update({
-        isMerchant: true
-    })
-    .then(() => {
-        showNotification('تمت ترقية المستخدم إلى تاجر', 'success');
-        loadUsers();
-        loadMerchants();
-    })
-    .catch(error => {
-        showNotification(error.message, 'error');
-    });
-}
-
-// إزالة صلاحية التاجر
-function removeMerchant(userId) {
-    db.collection('users').doc(userId).update({
-        isMerchant: false
-    })
-    .then(() => {
-        showNotification('تمت إزالة صلاحية التاجر', 'success');
-        loadUsers();
-        loadMerchants();
-    })
-    .catch(error => {
-        showNotification(error.message, 'error');
-    });
-}
-
-// حذف منتج
-function deleteProduct(productId) {
-    if (confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
-        db.collection('products').doc(productId).delete()
-            .then(() => {
-                showNotification('تم حذف الإعلان بنجاح', 'success');
-                loadProductsForAdmin();
-            })
-            .catch(error => {
-                showNotification(error.message, 'error');
-            });
+        if (usersResponse.status === 200) {
+            users = usersResponse.data || [];
+            localStorage.setItem('webaidea_users', JSON.stringify(users));
+        }
+        
+        renderProducts();
+        renderMerchantsTable();
+        renderAccountsTable();
+        renderAdsTable();
+        populateMerchantSelect();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // استخدام البيانات المخزنة محلياً إذا فشل الاتصال
+        renderProducts();
+        renderMerchantsTable();
+        renderAccountsTable();
+        renderAdsTable();
+        populateMerchantSelect();
     }
 }
 
-// تصفية الجدول
-function filterTable(tableId, searchTerm) {
-    const table = document.getElementById(tableId);
-    const rows = table.getElementsByTagName('tr');
+// دالة مساعدة للاتصال بالAPI (GET)
+async function fetchData(action, params = {}) {
+    const url = new URL(API_URL);
+    url.searchParams.append('action', action);
     
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        const textContent = row.textContent.toLowerCase();
-        
-        if (textContent.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
+    for (const key in params) {
+        url.searchParams.append(key, params[key]);
+    }
+    
+    try {
+        const response = await fetch(url.toString());
+        const data = await response.json();
+        console.log(`${action} response:`, data);
+        return data;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
+}
+
+// دالة مساعدة للاتصال بالAPI (POST)
+async function postData(action, params = {}) {
+    const formData = new FormData();
+    formData.append('action', action);
+    
+    for (const key in params) {
+        if (params[key] !== undefined && params[key] !== null) {
+            formData.append(key, params[key]);
         }
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        console.log(`${action} response:`, data);
+        return data;
+    } catch (error) {
+        console.error('Post error:', error);
+        throw error;
+    }
+}
+
+// رفع صورة إلى Drive
+async function uploadImageToDrive(imageData) {
+    try {
+        const response = await postData('uploadImage', {
+            imageData: imageData,
+            fileName: 'product_' + Date.now() + '.jpg'
+        });
+        
+        if (response.status === 200) {
+            return response.data.directUrl;
+        }
+        return null;
+    } catch (error) {
+        console.error('Upload error:', error);
+        return null;
     }
 }
 
 // معاينة الصورة
-function previewImage(input, previewId) {
-    const preview = document.getElementById(previewId);
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const file = input.files[0];
     
-    if (input.files && input.files[0]) {
+    if (file) {
         const reader = new FileReader();
-        
         reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="معاينة">`;
+            preview.innerHTML = `<img src="${e.target.result}" alt="معاينة الصورة" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
+            preview.dataset.imageData = e.target.result;
         };
-        
-        reader.readAsDataURL(input.files[0]);
-    } else {
-        preview.innerHTML = '';
+        reader.readAsDataURL(file);
     }
 }
 
-// عرض رسالة تنبيه
-function showNotification(message, type = 'info') {
-    notificationMessage.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.classList.add('show');
+// عرض المنتجات
+function renderProducts() {
+    const container = document.getElementById('productsContainer');
+    if (!container) return;
     
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 5000);
-}
-
-// تنسيق التاريخ
-function formatDate(timestamp) {
-    if (!timestamp) return 'غير محدد';
+    container.innerHTML = '';
     
-    const date = timestamp.toDate();
-    const options = {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    };
+    if (products.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #666;">
+                <i class="fas fa-box-open" style="font-size: 4rem; margin-bottom: 1rem; color: #ccc;"></i>
+                <h3>لا توجد منتجات حالياً</h3>
+                <p>كن أول من يعرض منتجاته على المنصة!</p>
+            </div>
+        `;
+        return;
+    }
     
-    return date.toLocaleDateString('ar-OM', options);
-}
-
-// الاتصال بجوجل شيتس لحفظ البيانات
-function saveToGoogleSheet(data) {
-    // هذه وظيفة افتراضية للاتصال بجوجل شيتس
-    // في الواقع، ستحتاج إلى استخدام Google Sheets API أو خدمة مثل Zapier
-    // أو استخدام Google Apps Script لإنشاء واجهة برمجة تطبيقات بسيطة
+    const featuredProducts = products.filter(p => p.featured);
+    const regularProducts = products.filter(p => !p.featured);
+    const allProducts = [...featuredProducts, ...regularProducts];
     
-    // مثال على كيفية إرسال البيانات إلى Google Apps Script
-    fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-            'Content-Type': 'application/json'
+    allProducts.forEach(product => {
+        const merchant = users.find(u => u.id == product.merchantId);
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        
+        if (product.featured) {
+            card.style.border = '2px solid #ffb300';
+            card.style.position = 'relative';
+            card.innerHTML += `<div class="special-badge"><i class="fas fa-crown"></i> مميز</div>`;
         }
-    })
-    .then(response => response.json())
-    .then(result => {
-        console.log('تم حفظ البيانات في جوجل شيتس:', result);
-    })
-    .catch(error => {
-        console.error('خطأ في حفظ البيانات في جوجل شيتس:', error);
+        
+        card.innerHTML = `
+            <div class="product-image">
+                <img src="${product.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                     alt="${product.title || 'منتج'}" 
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading'">
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${product.title || 'بدون عنوان'}</h3>
+                <p class="product-description">${(product.description || '').substring(0, 80)}${product.description && product.description.length > 80 ? '...' : ''}</p>
+                <div class="product-meta">
+                    <div>
+                        <div class="product-price">${product.price || 0} ريال</div>
+                        <div class="product-merchant">
+                            <i class="fas fa-user"></i> ${merchant ? merchant.name : 'تاجر'}
+                        </div>
+                    </div>
+                </div>
+                <a href="javascript:void(0);" class="view-btn" onclick="showProductDetail(${product.id})">
+                    عرض التفاصيل
+                </a>
+            </div>
+        `;
+        container.appendChild(card);
     });
 }
 
-// حفظ بيانات المنتج في جوجل شيتس
-function saveProductToGoogleSheet(product) {
-    const data = {
-        sheetName: 'مشروعي',
-        data: {
-            'اسم المنتج': product.name,
-            'السعر': product.price,
-            'رقم التواصل': product.contact,
-            'الوصف': product.description,
-            'النوع': product.isFeatured ? 'مميز' : 'عادي',
-            'صورة المنتج': product.image,
-            'التاريخ': new Date().toLocaleDateString('ar-OM')
-        }
-    };
+// عرض جداول الإدارة
+function renderMerchantsTable() {
+    const tbody = document.querySelector('#merchantsTable tbody');
+    if (!tbody) return;
     
-    saveToGoogleSheet(data);
+    tbody.innerHTML = '';
+    
+    const merchants = users.filter(u => u.type === 'merchant' || u.type === 'admin');
+    
+    if (merchants.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-user-tie" style="font-size: 2rem; margin-bottom: 1rem; color: #ccc;"></i>
+                    <p>لا يوجد تجار مسجلين بعد</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    merchants.forEach(user => {
+        const userAds = products.filter(p => p.merchantId == user.id);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${user.name || 'غير معروف'}</td>
+            <td>${user.email || 'غير معروف'}</td>
+            <td>${user.joinDate || 'غير معروف'}</td>
+            <td>${userAds.length}</td>
+            <td>
+                ${user.type !== 'admin' ? `
+                    <button class="action-btn btn-remove" onclick="removeMerchant('${user.id}')" title="إلغاء صلاحية التاجر">
+                        <i class="fas fa-user-times"></i>
+                    </button>
+                ` : ''}
+                <button class="action-btn btn-view" onclick="viewUserAds('${user.id}')" title="عرض إعلانات التاجر">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
-// حفظ بيانات المستخدم في جوجل شيتس
-function saveUserToGoogleSheet(user) {
-    const data = {
-        sheetName: 'مشروعي',
-        data: {
-            'الاسم': user.name,
-            'البريد الإلكتروني': user.email,
-            'نوع الحساب': user.isMerchant ? 'تاجر' : 'مستخدم عادي',
-            'التاريخ': new Date().toLocaleDateString('ar-OM')
-        }
-    };
+function renderAccountsTable() {
+    const tbody = document.querySelector('#accountsTable tbody');
+    if (!tbody) return;
     
-    saveToGoogleSheet(data);
+    tbody.innerHTML = '';
+    
+    if (users.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; color: #ccc;"></i>
+                    <p>لا يوجد مستخدمين مسجلين بعد</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${user.name || 'غير معروف'}</td>
+            <td>${user.email || 'غير معروف'}</td>
+            <td>
+                <span class="user-type-badge ${user.type === 'merchant' ? 'merchant-badge' : 
+                                              user.type === 'admin' ? 'admin-badge' : 'user-badge'}">
+                    ${user.type === 'merchant' ? 'تاجر' : 
+                     user.type === 'admin' ? 'مدير' : 'مستخدم عادي'}
+                </span>
+            </td>
+            <td>${user.joinDate || 'غير معروف'}</td>
+            <td>
+                ${user.type === 'user' ? `
+                    <button class="action-btn btn-approve" onclick="makeMerchant('${user.id}')" title="ترقية إلى تاجر">
+                        <i class="fas fa-user-check"></i> جعله تاجر
+                    </button>
+                ` : user.type === 'merchant' ? 
+                    '<span style="color:#2e7d32;">تاجر بالفعل</span>' :
+                    '<span style="color:#d32f2f;">مدير النظام</span>'
+                }
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
+
+function renderAdsTable() {
+    const tbody = document.querySelector('#adsTable tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (products.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 1rem; color: #ccc;"></i>
+                    <p>لا يوجد إعلانات منشورة بعد</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    products.forEach(product => {
+        const merchant = users.find(u => u.id == product.merchantId);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <img src="${product.image || 'https://via.placeholder.com/50'}" 
+                     alt="${product.title || 'منتج'}"
+                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
+                     onerror="this.src='https://via.placeholder.com/50'">
+            </td>
+            <td>${product.title || 'بدون عنوان'}</td>
+            <td>${product.price || 0}</td>
+            <td>${merchant ? merchant.name : 'غير معروف'}</td>
+            <td>${product.date || 'غير معروف'}</td>
+            <td>
+                <button class="action-btn btn-view" onclick="showProductDetail(${product.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn btn-remove" onclick="removeAd(${product.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+                ${!product.featured ? `
+                    <button class="action-btn btn-approve" onclick="makeFeatured(${product.id})" title="جعله إعلان مميز">
+                        <i class="fas fa-crown"></i>
+                    </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// ملء قائمة التجار في النموذج
+function populateMerchantSelect() {
+    const select = document.getElementById('adMerchant');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- اختر تاجر --</option>';
+    
+    const merchants = users.filter(u => u.type === 'merchant');
+    merchants.forEach(merchant => {
+        const option = document.createElement('option');
+        option.value = merchant.id;
+        option.textContent = `${merchant.name} (${merchant.email})`;
+        select.appendChild(option);
+    });
+}
+
+// البحث في الجداول
+function searchTable(tableId, query) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    const rows = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        let found = false;
+        
+        for (let j = 0; j < cells.length; j++) {
+            const cellText = cells[j].textContent || cells[j].innerText;
+            if (cellText.toLowerCase().includes(query.toLowerCase())) {
+                found = true;
+                break;
+            }
+        }
+        
+        rows[i].style.display = found ? '' : 'none';
+    }
+}
+
+// ترقية مستخدم إلى تاجر
+async function makeMerchant(userId) {
+    if (confirm('هل تريد حقًا ترقية هذا المستخدم إلى تاجر؟')) {
+        try {
+            const response = await postData('updateUserType', {
+                adminEmail: 'msdfrrt@gmail.com',
+                adminPassword: 'Shabib95873061@99',
+                userId: userId
+            });
+            
+            if (response.status === 200) {
+                // تحديث البيانات المحلية
+                const user = users.find(u => u.id == userId);
+                if (user) {
+                    user.type = 'merchant';
+                    localStorage.setItem('webaidea_users', JSON.stringify(users));
+                    
+                    renderMerchantsTable();
+                    renderAccountsTable();
+                    populateMerchantSelect();
+                    alert('تم ترقية المستخدم إلى تاجر بنجاح.');
+                }
+            } else {
+                alert(response.message || 'فشلت العملية');
+            }
+        } catch (error) {
+            alert('حدث خطأ أثناء ترقية المستخدم');
+            console.error(error);
+        }
+    }
+}
+
+// إلغاء صلاحية التاجر
+async function removeMerchant(userId) {
+    if (confirm('هل تريد إلغاء صلاحية التاجر عن هذا المستخدم؟')) {
+        try {
+            // في هذا الإصجار، نقوم فقط بتحديث البيانات المحلية
+            // في تطبيق حقيقي، ستقوم هنا باستدعاء API
+            const user = users.find(u => u.id == userId);
+            if (user && user.type === 'merchant') {
+                user.type = 'user';
+                localStorage.setItem('webaidea_users', JSON.stringify(users));
+                
+                renderMerchantsTable();
+                renderAccountsTable();
+                populateMerchantSelect();
+                alert('تم إلغاء صلاحية التاجر.');
+            }
+        } catch (error) {
+            alert('حدث خطأ أثناء العملية');
+            console.error(error);
+        }
+    }
+}
+
+// إضافة منتج جديد
+async function postAdminAd(event) {
+    event.preventDefault();
+    
+    const title = document.getElementById('adTitle').value;
+    const price = document.getElementById('adPrice').value;
+    const description = document.getElementById('adDescription').value;
+    const contact = document.getElementById('adContact').value;
+    const merchantId = document.getElementById('adMerchant').value;
+    const imagePreview = document.getElementById('imagePreview');
+    const imageData = imagePreview.dataset.imageData;
+    
+    if (!merchantId) {
+        alert('يرجى اختيار تاجر لنشر الإعلان.');
+        return;
+    }
+    
+    if (!imageData) {
+        alert('يرجى اختيار صورة للمنتج.');
+        return;
+    }
+    
+    try {
+        // رفع الصورة أولاً
+        const imageUrl = await uploadImageToDrive(imageData);
+        
+        if (!imageUrl) {
+            alert('فشل رفع الصورة. يرجى المحاولة مرة أخرى.');
+            return;
+        }
+        
+        // إضافة المنتج
+        const response = await postData('addProduct', {
+            isAdmin: 'true',
+            userId: merchantId,
+            title: title,
+            price: price,
+            description: description,
+            image: imageUrl,
+            contact: contact,
+            merchantId: merchantId,
+            featured: 'true'
+        });
+        
+        if (response.status === 201) {
+            // إضافة المنتج إلى البيانات المحلية
+            const newProduct = {
+                id: response.data.productId,
+                title: title,
+                price: parseFloat(price),
+                description: description,
+                image: imageUrl,
+                contact: contact,
+                merchantId: merchantId,
+                featured: true,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            products.push(newProduct);
+            localStorage.setItem('webaidea_products', JSON.stringify(products));
+            
+            // إعادة تعيين النموذج
+            document.getElementById('adminAdForm').reset();
+            imagePreview.innerHTML = `
+                <i class="fas fa-image" style="font-size: 3rem; color: #ccc;"></i>
+                <p style="color: #999; margin-top: 10px;">لم يتم اختيار صورة</p>
+            `;
+            imagePreview.dataset.imageData = '';
+            
+            // تحديث العروض
+            renderAdsTable();
+            renderProducts();
+            alert('تم نشر الإعلان المميز بنجاح!');
+        } else {
+            alert(response.message || 'فشل نشر الإعلان');
+        }
+    } catch (error) {
+        alert('حدث خطأ أثناء نشر الإعلان');
+        console.error(error);
+    }
+}
+
+// حذف إعلان
+async function removeAd(productId) {
+    if (confirm('هل تريد حذف هذا الإعلان؟')) {
+        try {
+            const response = await postData('deleteProduct', {
+                adminEmail: 'msdfrrt@gmail.com',
+                adminPassword: 'Shabib95873061@99',
+                productId: productId
+            });
+            
+            if (response.status === 200) {
+                // تحديث البيانات المحلية
+                products = products.filter(p => p.id != productId);
+                localStorage.setItem('webaidea_products', JSON.stringify(products));
+                
+                renderAdsTable();
+                renderProducts();
+                alert('تم حذف الإعلان بنجاح.');
+            } else {
+                alert(response.message || 'فشلت العملية');
+            }
+        } catch (error) {
+            alert('حدث خطأ أثناء حذف الإعلان');
+            console.error(error);
+        }
+    }
+}
+
+// جعل الإعلان مميزاً
+function makeFeatured(productId) {
+    if (confirm('هل تريد جعل هذا الإعلان مميزاً؟')) {
+        const product = products.find(p => p.id == productId);
+        if (product) {
+            product.featured = true;
+            localStorage.setItem('webaidea_products', JSON.stringify(products));
+            
+            renderAdsTable();
+            renderProducts();
+            alert('تم جعل الإعلان مميزاً.');
+        }
+    }
+}
+
+// عرض إعلانات تاجر معين
+function viewUserAds(userId) {
+    const userAds = products.filter(p => p.merchantId == userId);
+    const user = users.find(u => u.id == userId);
+    
+    if (userAds.length > 0) {
+        let message = `إعلانات ${user.name}:\n\n`;
+        userAds.forEach(ad => {
+            message += `- ${ad.title} (${ad.price} ريال)\n`;
+        });
+        alert(message);
+    } else {
+        alert(`ليس لدى ${user.name} أي إعلانات منشورة.`);
+    }
+}
+
+// معالجة تسجيل الدخول
+async function handleAuth(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const name = document.getElementById('name').value;
+    const isLoginMode = document.getElementById('submitBtn').textContent === 'دخول';
+    
+    try {
+        if (isLoginMode) {
+            // تسجيل الدخول
+            if (email === 'msdfrrt@gmail.com' && password === 'Shabib95873061@99') {
+                // دخول كمدير
+                isAdminLoggedIn = true;
+                localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(true));
+                currentUser = {
+                    id: 0,
+                    name: 'Administrator',
+                    email: email,
+                    type: 'admin'
+                };
+                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                
+                await checkAdminStatus();
+                closeModal();
+                alert('مرحباً بك في لوحة تحكم الإدارة!');
+                return;
+            }
+            
+            // تسجيل الدخول كمستخدم عادي
+            const response = await postData('login', { email, password });
+            
+            if (response.status === 200) {
+                currentUser = response.data;
+                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                document.getElementById('adminLoginTrigger').style.display = 'flex';
+                closeModal();
+                alert(`مرحباً بعودتك ${currentUser.name}!`);
+                
+                // تحديث البيانات المحلية
+                await loadInitialData();
+            } else {
+                alert(response.message || 'فشل تسجيل الدخول');
+            }
+        } else {
+            // إنشاء حساب جديد
+            const response = await postData('register', { name, email, password });
+            
+            if (response.status === 201) {
+                currentUser = response.data;
+                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                document.getElementById('adminLoginTrigger').style.display = 'flex';
+                closeModal();
+                alert(`تم إنشاء حسابك بنجاح ${name}!`);
+                
+                // تحديث قائمة المستخدمين
+                users.push(response.data);
+                localStorage.setItem('webaidea_users', JSON.stringify(users));
+                renderAccountsTable();
+            } else {
+                alert(response.message || 'فشل إنشاء الحساب');
+            }
+        }
+    } catch (error) {
+        alert('حدث خطأ في الاتصال بالخادم. تأكد من نشر Apps Script بشكل صحيح.');
+        console.error('Auth error:', error);
+    }
+}
+
+// عرض تفاصيل المنتج
+function showProductDetail(productId) {
+    const product = products.find(p => p.id == productId);
+    const merchant = users.find(u => u.id == product.merchantId);
+    
+    if (!product) {
+        alert('المنتج غير موجود');
+        return;
+    }
+    
+    const detailBody = document.getElementById('detailBody');
+    detailBody.innerHTML = `
+        <div class="detail-header">
+            <div class="detail-image">
+                <img src="${product.image || 'https://via.placeholder.com/400x300?text=No+Image'}" 
+                     alt="${product.title}"
+                     onerror="this.src='https://via.placeholder.com/400x300?text=Error+Loading'">
+            </div>
+            <div class="detail-info">
+                <h2 class="detail-title">${product.title || 'بدون عنوان'}</h2>
+                <div class="detail-price">${product.price || 0} ريال عماني</div>
+                ${product.featured ? '<div class="featured-badge"><i class="fas fa-crown"></i> إعلان مميز</div>' : ''}
+                <div class="detail-merchant"><i class="fas fa-user-tie"></i> <strong>التاجر:</strong> ${merchant ? merchant.name : 'غير معروف'}</div>
+                <div class="detail-contact"><i class="fas fa-phone"></i> <strong>رقم التواصل:</strong> ${product.contact || 'غير متوفر'}</div>
+                <div class="detail-date"><i class="fas fa-calendar"></i> <strong>تاريخ النشر:</strong> ${product.date || 'غير معروف'}</div>
+            </div>
+        </div>
+        <div class="detail-description">
+            <h3><i class="fas fa-align-right"></i> وصف المنتج</h3>
+            <p>${product.description || 'لا يوجد وصف'}</p>
+        </div>
+        <div class="detail-actions">
+            <button class="btn btn-primary" onclick="closeDetailModal()">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('productDetailModal').style.display = 'flex';
+}
+
+// وظائف مساعدة أخرى
+function toggleMenu() {
+    const navLinks = document.querySelector('.nav-links');
+    navLinks.classList.toggle('active');
+}
+
+function openAdminTab(evt, tabName) {
+    const tabContents = document.getElementsByClassName('tab-content');
+    const tabLinks = document.getElementsByClassName('tab-link');
+    
+    for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove('active-tab');
+    }
+    
+    for (let i = 0; i < tabLinks.length; i++) {
+        tabLinks[i].classList.remove('active');
+    }
+    
+    document.getElementById(tabName).classList.add('active-tab');
+    evt.currentTarget.classList.add('active');
+}
+
+function redirectToInstagram() {
+    window.open('https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr', '_blank');
+}
+
+function switchAuthMode() {
+    const title = document.getElementById('modalTitle');
+    const submitBtn = document.getElementById('submitBtn');
+    const switchText = document.getElementById('switchText');
+    const switchLink = document.getElementById('switchLink');
+    const nameField = document.getElementById('nameField');
+    
+    if (submitBtn.textContent === 'دخول') {
+        title.textContent = 'انشاء حساب جديد';
+        submitBtn.textContent = 'تسجيل';
+        switchText.textContent = 'لديك حساب بالفعل؟';
+        switchLink.textContent = 'تسجيل الدخول';
+        nameField.style.display = 'block';
+    } else {
+        title.textContent = 'تسجيل الدخول';
+        submitBtn.textContent = 'دخول';
+        switchText.textContent = 'ليس لديك حساب؟';
+        switchLink.textContent = 'انشاء حساب جديد';
+        nameField.style.display = 'none';
+    }
+}
+
+function openAuthModal() {
+    document.getElementById('authModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('authForm').reset();
+    
+    if (document.getElementById('submitBtn').textContent !== 'دخول') {
+        switchAuthMode();
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('productDetailModal').style.display = 'none';
+}
+
+function logoutAdmin() {
+    if (confirm('هل تريد تسجيل الخروج من لوحة الإدارة؟')) {
+        isAdminLoggedIn = false;
+        localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
+        checkAdminStatus();
+        alert('تم تسجيل الخروج من لوحة الإدارة.');
+    }
+}
+
+// إغلاق النوافذ المنبثقة بالنقر خارجها
+window.onclick = function(event) {
+    const authModal = document.getElementById('authModal');
+    const detailModal = document.getElementById('productDetailModal');
+    
+    if (event.target === authModal) {
+        closeModal();
+    }
+    if (event.target === detailModal) {
+        closeDetailModal();
+    }
+};
