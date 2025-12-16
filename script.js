@@ -443,47 +443,7 @@ async function loadDataFromServer() {
     }
 }
 
-// دالة مساعدة للاتصال بالAPI (GET فقط)
-async function fetchData(action, params = {}) {
-    const url = new URL(API_URL);
-    url.searchParams.append('action', action);
-    
-    for (const key in params) {
-        url.searchParams.append(key, params[key]);
-    }
-    
-    try {
-        console.log(`🌐 طلب API: ${action}`);
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error(`❌ خطأ في طلب ${action}:`, error);
-        throw error;
-    }
-}
-
-// دالة مساعدة للاتصال بالAPI (POST)
-async function postData(action, params = {}) {
-    const url = new URL(API_URL);
-    url.searchParams.append('action', action);
-    
-    for (const key in params) {
-        url.searchParams.append(key, params[key]);
-    }
-    
-    try {
-        console.log(`📤 إرسال بيانات: ${action}`, params);
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error(`❌ خطأ في إرسال ${action}:`, error);
-        throw error;
-    }
-}
-
-// ==================== وظائف المصادقة ====================
+// ==================== وظائف المصادقة المحسنة ====================
 
 // فتح نافذة المصادقة
 function openAuthModal() {
@@ -538,7 +498,9 @@ function switchAuthMode() {
     }
 }
 
-// معالجة المصادقة (تسجيل دخول / إنشاء حساب)
+// ==================== دالة المصادقة الرئيسية المُحسَّنة ====================
+
+// معالجة المصادقة (تسجيل دخول / إنشاء حساب) - النسخة المصححة
 async function handleAuth(event) {
     event.preventDefault();
     
@@ -591,11 +553,11 @@ async function handleAuth(event) {
             // ========== 2. تسجيل الدخول العادي ==========
             console.log('🔐 محاولة تسجيل دخول:', email);
             
-            // البحث في البيانات المحلية أولاً
+            // البحث في البيانات المحلية أولاً (كحل سريع)
             let user = users.find(u => u.email === email && u.password === password);
             
             if (user) {
-                // وجد المستخدم في البيانات المحلية
+                // ✅ وجد المستخدم في البيانات المحلية
                 console.log('✅ تسجيل دخول ناجح من البيانات المحلية:', user);
                 currentUser = user;
                 isAdminLoggedIn = user.type === 'admin';
@@ -612,19 +574,30 @@ async function handleAuth(event) {
                 return;
             }
             
-            // إذا لم يوجد محلياً، جرب السيرفر
+            // ⭐⭐ محاولة تسجيل الدخول من السيرفر
+            console.log('🔄 محاولة تسجيل الدخول من السيرفر...');
+            
             try {
-                const response = await fetchData('login', { email, password });
+                const response = await fetchData('login', { 
+                    email: email, 
+                    password: password 
+                });
+                
+                console.log('استجابة السيرفر لتسجيل الدخول:', response);
                 
                 if (response.status === 200) {
                     user = response.data;
                     console.log('✅ تسجيل دخول ناجح من السيرفر:', user);
                     
-                    // إضافة إلى البيانات المحلية
-                    if (!users.some(u => u.email === user.email)) {
+                    // إضافة المستخدم إلى البيانات المحلية إذا لم يكن موجوداً
+                    const existingUserIndex = users.findIndex(u => u.email === user.email);
+                    if (existingUserIndex === -1) {
                         users.push(user);
-                        localStorage.setItem('webaidea_users', JSON.stringify(users));
+                    } else {
+                        users[existingUserIndex] = user; // تحديث البيانات
                     }
+                    
+                    localStorage.setItem('webaidea_users', JSON.stringify(users));
                     
                     currentUser = user;
                     isAdminLoggedIn = user.type === 'admin';
@@ -635,12 +608,51 @@ async function handleAuth(event) {
                     updateUI();
                     closeModal();
                     alert(`🎉 مرحباً بعودتك ${user.name}!`);
+                    
+                } else if (response.status === 404) {
+                    // إذا لم تكن ورقة المستخدمين موجودة، استخدم البيانات المحلية
+                    alert('⚠️ لم يتم إنشاء قاعدة البيانات بعد. سيتم استخدام البيانات المحلية.');
+                    
+                    // البحث في البيانات المحلية مرة أخرى
+                    user = users.find(u => u.email === email && u.password === password);
+                    if (user) {
+                        currentUser = user;
+                        isAdminLoggedIn = user.type === 'admin';
+                        
+                        localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                        localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
+                        
+                        updateUI();
+                        closeModal();
+                        alert(`🎉 مرحباً بعودتك ${user.name}! (محلياً)`);
+                    } else {
+                        alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\n\nℹ️ حاول إنشاء حساب جديد أولاً.');
+                    }
+                    
                 } else {
-                    alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة');
+                    alert(`❌ ${response.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة'}`);
                 }
+                
             } catch (serverError) {
-                console.warn('⚠️ خطأ في السيرفر:', serverError);
-                alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\n\n⚠️ قد يكون هناك مشكلة في الاتصال بالسيرفر');
+                console.error('❌ خطأ في الاتصال بالسيرفر:', serverError);
+                
+                // ⭐⭐ حل بديل: استخدام البيانات المحلية
+                alert('⚠️ مشكلة في الاتصال بالسيرفر. سيتم استخدام البيانات المحلية.');
+                
+                user = users.find(u => u.email === email && u.password === password);
+                if (user) {
+                    currentUser = user;
+                    isAdminLoggedIn = user.type === 'admin';
+                    
+                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
+                    
+                    updateUI();
+                    closeModal();
+                    alert(`🎉 مرحباً بعودتك ${user.name}! (محلياً)`);
+                } else {
+                    alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\n\nℹ️ إذا كنت قد أنشأت حساباً للتو، جرب تسجيل الدخول لاحقاً.');
+                }
             }
             
         } else {
@@ -649,13 +661,21 @@ async function handleAuth(event) {
             
             // التحقق من عدم وجود الحساب محلياً
             if (users.some(u => u.email === email)) {
-                alert('⚠️ هذا البريد الإلكتروني مسجل مسبقاً');
+                alert('⚠️ هذا البريد الإلكتروني مسجل مسبقاً في البيانات المحلية');
                 return;
             }
             
-            // محاولة التسجيل في السيرفر
+            // ⭐⭐ محاولة التسجيل في السيرفر
+            console.log('🔄 محاولة تسجيل في السيرفر...');
+            
             try {
-                const response = await fetchData('register', { name, email, password });
+                const response = await fetchData('register', { 
+                    name: name, 
+                    email: email, 
+                    password: password 
+                });
+                
+                console.log('استجابة السيرفر للتسجيل:', response);
                 
                 if (response.status === 201) {
                     const newUser = response.data;
@@ -670,43 +690,145 @@ async function handleAuth(event) {
                     localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
                     localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
                     
+                    // تحديث الواجهة
                     updateUI();
+                    
                     closeModal();
-                    alert(`🎉 تم إنشاء حسابك بنجاح ${name}!\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
+                    alert(`🎉 تم إنشاء حسابك بنجاح ${name}!\n\n✅ يمكنك تسجيل الدخول الآن.\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
+                    
+                } else if (response.status === 409) {
+                    alert('⚠️ هذا البريد الإلكتروني مسجل مسبقاً في السيرفر');
                 } else {
-                    alert(`❌ ${response.message || 'فشل إنشاء الحساب'}`);
+                    alert(`❌ ${response.message || 'فشل إنشاء الحساب في السيرفر'}`);
                 }
+                
             } catch (serverError) {
-                console.warn('⚠️ خطأ في السيرفر، إنشاء حساب محلي:', serverError);
+                console.error('❌ خطأ في السيرفر، إنشاء حساب محلي:', serverError);
                 
-                // إنشاء حساب محلي إذا فشل السيرفر
-                const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-                const newUser = {
-                    id: newId,
-                    name: name,
-                    email: email,
-                    password: password,
-                    type: 'user',
-                    joinDate: new Date().toISOString().split('T')[0]
-                };
-                
-                users.push(newUser);
-                currentUser = newUser;
-                isAdminLoggedIn = false;
-                
-                localStorage.setItem('webaidea_users', JSON.stringify(users));
-                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
-                
-                updateUI();
-                closeModal();
-                alert(`🎉 تم إنشاء حسابك بنجاح ${name}! (محلياً)\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
+                // ⭐⭐ حل بديل: إنشاء حساب محلي
+                if (confirm('⚠️ مشكلة في الاتصال بالسيرفر. هل تريد إنشاء حساب محلياً؟\n\n(البيانات ستكون محلية فقط حتى يتم الاتصال بالسيرفر)')) {
+                    
+                    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+                    const newUser = {
+                        id: newId,
+                        name: name,
+                        email: email,
+                        password: password,
+                        type: 'user',
+                        joinDate: new Date().toISOString().split('T')[0]
+                    };
+                    
+                    // إضافة إلى البيانات المحلية
+                    users.push(newUser);
+                    currentUser = newUser;
+                    isAdminLoggedIn = false;
+                    
+                    localStorage.setItem('webaidea_users', JSON.stringify(users));
+                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
+                    
+                    // تحديث الواجهة
+                    updateUI();
+                    
+                    closeModal();
+                    alert(`🎉 تم إنشاء حسابك بنجاح ${name}! (محلياً)\n\n✅ يمكنك تسجيل الدخول الآن باستخدام نفس البيانات.\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.\n\nℹ️ البيانات مخزنة محلياً فقط حتى يتم الاتصال بالسيرفر.`);
+                }
             }
         }
         
     } catch (error) {
         console.error('❌ خطأ غير متوقع في المصادقة:', error);
-        alert('⚠️ حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
+        alert('⚠️ حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو تحديث الصفحة.\n\n' + error.toString());
+    }
+}
+
+// دالة مساعدة للاتصال بالAPI (GET فقط) - مع تحسينات
+async function fetchData(action, params = {}) {
+    const url = new URL(API_URL);
+    url.searchParams.append('action', action);
+    
+    for (const key in params) {
+        url.searchParams.append(key, params[key]);
+    }
+    
+    try {
+        console.log(`🌐 طلب API: ${action}`, params);
+        
+        // إضافة مهلة زمنية للطلب
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني
+        
+        const response = await fetch(url.toString(), {
+            signal: controller.signal,
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error(`❌ خطأ في طلب ${action}:`, error);
+        
+        // إرجاع رد افتراضي في حالة الخطأ
+        if (error.name === 'AbortError') {
+            throw new Error('انتهت مهلة الاتصال. يرجى التحقق من اتصال الإنترنت.');
+        }
+        
+        throw error;
+    }
+}
+
+// دالة مساعدة للاتصال بالAPI (POST)
+async function postData(action, params = {}) {
+    const url = new URL(API_URL);
+    url.searchParams.append('action', action);
+    
+    for (const key in params) {
+        url.searchParams.append(key, params[key]);
+    }
+    
+    try {
+        console.log(`📤 إرسال بيانات: ${action}`, params);
+        
+        // إضافة مهلة زمنية للطلب
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني
+        
+        const response = await fetch(url.toString(), {
+            signal: controller.signal,
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error(`❌ خطأ في إرسال ${action}:`, error);
+        
+        // إرجاع رد افتراضي في حالة الخطأ
+        if (error.name === 'AbortError') {
+            throw new Error('انتهت مهلة الاتصال. يرجى التحقق من اتصال الإنترنت.');
+        }
+        
+        throw error;
     }
 }
 
@@ -1580,12 +1702,16 @@ function toggleMenu() {
 window.addEventListener('click', function(event) {
     const authModal = document.getElementById('authModal');
     const detailModal = document.getElementById('productDetailModal');
+    const merchantModal = document.getElementById('merchantAdModal');
     
     if (event.target === authModal) {
         closeModal();
     }
     if (event.target === detailModal) {
         closeDetailModal();
+    }
+    if (event.target === merchantModal) {
+        closeMerchantAdModal();
     }
 });
 
