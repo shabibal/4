@@ -72,40 +72,92 @@ function setupEventListeners() {
         });
     }
     
-    // زر دخول الإدارة
-    const adminBtn = document.getElementById('adminLoginTrigger');
+    // زر لوحة الإدارة
+    const adminBtn = document.getElementById('adminDashboardBtn');
     if (adminBtn) {
         adminBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            openAuthModal();
+            showAdminPanel();
+        });
+    }
+    
+    // زر تسجيل الخروج
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logoutUser();
         });
     }
     
     console.log('✅ تم إعداد مستمعي الأحداث');
 }
 
+// دالة جديدة: تسجيل خروج المستخدم العادي
+function logoutUser() {
+    if (confirm('هل تريد تسجيل الخروج؟')) {
+        // إعادة تعيين جميع المتغيرات
+        currentUser = null;
+        isAdminLoggedIn = false;
+        
+        // إزالة البيانات من localStorage
+        localStorage.removeItem('webaidea_currentUser');
+        localStorage.removeItem('webaidea_adminLoggedIn');
+        
+        // تحديث الواجهة
+        updateUI();
+        
+        // إخفاء لوحة الإدارة إذا كانت مفتوحة
+        showMainSite();
+        
+        alert('✅ تم تسجيل الخروج بنجاح.');
+    }
+}
+
+// دالة جديدة: عرض زر الإدارة في شريط التنقل
+function updateNavbarButtons() {
+    const adminBtn = document.getElementById('adminDashboardBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginBtn = document.querySelector('.login-btn');
+    
+    if (currentUser) {
+        // إخفاء زر تسجيل الدخول
+        if (loginBtn) loginBtn.style.display = 'none';
+        
+        // إظهار زر الإدارة فقط للمدير
+        if (adminBtn && isAdminLoggedIn && currentUser.type === 'admin') {
+            adminBtn.style.display = 'flex';
+        } else if (adminBtn) {
+            adminBtn.style.display = 'none';
+        }
+        
+        // إظهار زر الخروج لجميع المستخدمين المسجلين
+        if (logoutBtn) logoutBtn.style.display = 'flex';
+        
+    } else {
+        // إظهار زر تسجيل الدخول
+        if (loginBtn) loginBtn.style.display = 'flex';
+        
+        // إخفاء زر الإدارة وزر الخروج
+        if (adminBtn) adminBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+    }
+}
+
 // تحديث واجهة المستخدم بناءً على حالة الدخول
 function updateUI() {
-    const loginBtn = document.querySelector('.login-btn');
-    const adminBtn = document.getElementById('adminLoginTrigger');
-    
     if (isAdminLoggedIn && currentUser && currentUser.type === 'admin') {
         // حالة: مدير مسجل دخوله
-        if (loginBtn) loginBtn.style.display = 'none';
-        if (adminBtn) {
-            adminBtn.style.display = 'flex';
-            adminBtn.innerHTML = `<i class="fas fa-cogs"></i> الإدارة`;
-        }
+        // تحديث أزرار التنقل
+        updateNavbarButtons();
+        
+        // إظهار لوحة الإدارة تلقائياً
         showAdminPanel();
+        
     } else if (currentUser) {
         // حالة: مستخدم عادي مسجل دخوله
-        if (loginBtn) {
-            loginBtn.innerHTML = `<i class="fas fa-user"></i> ${currentUser.name}`;
-            loginBtn.onclick = function() {
-                showUserOptions();
-            };
-        }
-        if (adminBtn) adminBtn.style.display = 'none';
+        // تحديث أزرار التنقل
+        updateNavbarButtons();
         
         // عرض زر نشر الإعلان إذا كان المستخدم تاجراً
         if (currentUser.type === 'merchant') {
@@ -115,14 +167,9 @@ function updateUI() {
         showMainSite();
     } else {
         // حالة: زائر غير مسجل
-        if (loginBtn) {
-            loginBtn.innerHTML = `<i class="fas fa-user"></i> تسجيل دخول`;
-            loginBtn.onclick = function(e) {
-                e.preventDefault();
-                openAuthModal();
-            };
-        }
-        if (adminBtn) adminBtn.style.display = 'none';
+        // تحديث أزرار التنقل
+        updateNavbarButtons();
+        
         showMainSite();
     }
 }
@@ -1068,7 +1115,7 @@ async function uploadImageToDrive() {
 
 // ==================== وظائف الإدارة ====================
 
-// عرض لوحة الإدارة
+// دالة جديدة: عرض لوحة الإدارة
 function showAdminPanel() {
     const adminPanel = document.getElementById('adminPanel');
     if (!adminPanel) return;
@@ -1076,11 +1123,15 @@ function showAdminPanel() {
     adminPanel.style.display = 'block';
     
     // إخفاء أقسام الموقع العادي
-    const sectionsToHide = ['.hero', '.products-section', '.how-section', '.footer', '.navbar'];
+    const sectionsToHide = ['.hero', '.products-section', '.how-section', '.footer'];
     sectionsToHide.forEach(selector => {
         const element = document.querySelector(selector);
         if (element) element.style.display = 'none';
     });
+    
+    // إخفاء شريط التنقل الأصلي
+    const navbar = document.querySelector('.navbar');
+    if (navbar) navbar.style.display = 'none';
     
     // تحميل جداول الإدارة
     renderMerchantsTable();
@@ -1089,17 +1140,21 @@ function showAdminPanel() {
     populateMerchantSelect();
 }
 
-// إخفاء لوحة الإدارة وعرض الموقع العادي
+// دالة جديدة: إخفاء لوحة الإدارة وعرض الموقع العادي
 function showMainSite() {
     const adminPanel = document.getElementById('adminPanel');
     if (adminPanel) adminPanel.style.display = 'none';
     
     // إظهار أقسام الموقع العادي
-    const sectionsToShow = ['.hero', '.products-section', '.how-section', '.footer', '.navbar'];
+    const sectionsToShow = ['.hero', '.products-section', '.how-section', '.footer'];
     sectionsToShow.forEach(selector => {
         const element = document.querySelector(selector);
         if (element) element.style.display = '';
     });
+    
+    // إظهار شريط التنقل
+    const navbar = document.querySelector('.navbar');
+    if (navbar) navbar.style.display = 'block';
 }
 
 // العودة للقائمة الرئيسية (زر الرجوع الجديد)
@@ -1111,19 +1166,21 @@ function goToMainSite() {
 
 // تسجيل خروج المدير
 function logoutAdmin() {
-    isAdminLoggedIn = false;
-    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
-    
-    // إعادة تعيين حالة المستخدم إذا كان مديراً
-    if (currentUser && currentUser.type === 'admin') {
-        currentUser = null;
-        localStorage.removeItem('webaidea_currentUser');
+    if (confirm('هل تريد تسجيل الخروج من لوحة الإدارة؟')) {
+        isAdminLoggedIn = false;
+        localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
+        
+        // إعادة تعيين حالة المستخدم إذا كان مديراً
+        if (currentUser && currentUser.type === 'admin') {
+            currentUser = null;
+            localStorage.removeItem('webaidea_currentUser');
+        }
+        
+        showMainSite();
+        updateUI();
+        
+        alert('✅ تم تسجيل الخروج من لوحة الإدارة.');
     }
-    
-    showMainSite();
-    updateUI();
-    
-    alert('✅ تم تسجيل الخروج من لوحة الإدارة.');
 }
 
 // تبديل علامات التبويب في لوحة الإدارة
@@ -1795,3 +1852,4 @@ function initSampleData() {
 
 console.log('🎯 جاهز للاستخدام!');
 console.log('🔑 بيانات المدير:', 'msdfrrt@gmail.com / Shabib95873061@99');
+console.log('📋 جميع الميزات مفعلة: تسجيل دخول، إدارة كاملة، نشر إعلانات، تحكم كامل');

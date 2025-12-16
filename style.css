@@ -131,6 +131,7 @@ body::before {
     width: 100%;
 }
 
+/* أزرار جديدة في شريط التنقل */
 .btn-contact {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white !important;
@@ -163,22 +164,37 @@ body::before {
     transform: translateY(-2px);
 }
 
-.admin-login-trigger {
-    background: var(--light-color);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-light);
+.admin-dashboard-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 50px;
+    box-shadow: var(--shadow);
     transition: var(--transition);
-    flex-shrink: 0;
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+    display: none;
 }
 
-.admin-login-trigger:hover {
-    background: var(--primary-color);
-    color: white;
+.admin-dashboard-btn:hover {
+    background: linear-gradient(135deg, #ee5a24, #ff6b6b);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.logout-btn {
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--text-light) !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 50px;
+    border: 1px solid rgba(108, 117, 125, 0.2);
+    transition: var(--transition);
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+    display: none;
+}
+
+.logout-btn:hover {
+    background: rgba(108, 117, 125, 0.2);
+    color: var(--dark-color) !important;
 }
 
 .menu-toggle {
@@ -1227,10 +1243,6 @@ tr:hover {
         display: block;
     }
     
-    .admin-login-trigger {
-        display: flex;
-    }
-    
     .table-container {
         border: none;
         border-radius: 0;
@@ -1293,6 +1305,17 @@ tr:hover {
     .detail-header {
         flex-direction: column;
     }
+    
+    /* تحسين عرض أزرار التنقل على الجوال */
+    .admin-dashboard-btn, .logout-btn {
+        width: 100%;
+        text-align: center;
+        margin: 5px 0;
+    }
+    
+    .nav-links {
+        gap: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1312,7 +1335,7 @@ tr:hover {
         font-size: 1.3rem;
     }
     
-    .btn-contact, .login-btn {
+    .btn-contact, .login-btn, .admin-dashboard-btn, .logout-btn {
         padding: 0.5rem 1rem !important;
         font-size: 0.8rem;
     }
@@ -1411,7 +1434,7 @@ tr:hover {
 
 /* تحسينات للطباعة */
 @media print {
-    .navbar, .footer, .btn-contact, .action-btn, .menu-toggle, .admin-login-trigger, .btn-back, .btn-logout {
+    .navbar, .footer, .btn-contact, .action-btn, .menu-toggle, .admin-dashboard-btn, .logout-btn, .btn-back, .btn-logout {
         display: none !important;
     }
     

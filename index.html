@@ -23,9 +23,13 @@
                 <a href="javascript:void(0);" class="login-btn" onclick="openAuthModal()">
                     <i class="fas fa-user"></i> تسجيل دخول
                 </a>
-                <!-- زر دخول الإدارة (مخفي إلا للمدير) -->
-                <a href="javascript:void(0);" id="adminLoginTrigger" class="admin-login-trigger" style="display: none;">
-                    <i class="fas fa-user-cog"></i>
+                <!-- زر دخول الإدارة (سيكون مخفي وستظهر عند تسجيل دخول المدير) -->
+                <a href="javascript:void(0);" id="adminDashboardBtn" class="admin-dashboard-btn" style="display: none;" onclick="showAdminPanel()">
+                    <i class="fas fa-cogs"></i> لوحة الإدارة
+                </a>
+                <!-- زر الخروج (سيكون مخفي وستظهر عند تسجيل دخول أي مستخدم) -->
+                <a href="javascript:void(0);" id="logoutBtn" class="logout-btn" style="display: none;" onclick="logoutUser()">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل خروج
                 </a>
             </div>
             <button class="menu-toggle" onclick="toggleMenu()">
@@ -61,7 +65,7 @@
         </div>
     </div>
 
-    <!-- نافذة الإدارة (ستظهر فقط للمدير) -->
+    <!-- لوحة الإدارة (ستظهر فقط للمدير) -->
     <div id="adminPanel" class="admin-panel" style="display: none;">
         <div class="admin-header">
             <div class="admin-header-left">
@@ -257,11 +261,6 @@
                 <a href="#"><i class="fab fa-facebook"></i></a>
             </div>
             <p class="copyright">© 2023 ويب أيديا. جميع الحقوق محفوظة.</p>
-            <div style="margin-top: 20px;">
-                <a href="javascript:void(0);" onclick="openAuthModal()" style="color: white; text-decoration: underline;">
-                    <i class="fas fa-user"></i> تسجيل الدخول
-                </a>
-            </div>
         </div>
     </footer>
 
