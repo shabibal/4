@@ -105,7 +105,7 @@ async function loadLocalData() {
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات المحلية:', error);
         
-        // محاولة استعادة من النسخ الاحتياطية
+        // محاولة استعادة من النسخ الاحتياطيات
         try {
             const backupUsers = localStorage.getItem('webaidea_backup_users');
             const backupProducts = localStorage.getItem('webaidea_backup_products');
@@ -459,9 +459,12 @@ function renderProducts() {
             `;
         }
         
+        // استخدام الصورة المحلية إذا كانت متاحة، وإلا استخدام الصورة العامة
+        const displayImage = product.localImage || product.image || 'https://via.placeholder.com/300x200?text=No+Image';
+        
         card.innerHTML += `
             <div class="product-image">
-                <img src="${product.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                <img src="${displayImage}" 
                      alt="${product.title || 'منتج'}" 
                      loading="lazy"
                      onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading'">
@@ -647,6 +650,94 @@ function closeMerchantAdModal() {
     merchantSelectedImage = null;
 }
 
+// ========== دالة توليد صورة ذكية بناءً على المحتوى ==========
+function generateSmartImage(title, description) {
+    const keywordsMap = {
+        // إلكترونيات
+        'ساعة': ['watch', 'smartwatch', 'clock'],
+        'ساعة ذكية': ['smartwatch', 'watch', 'technology'],
+        'موبايل': ['phone', 'smartphone', 'mobile'],
+        'جوال': ['phone', 'smartphone'],
+        'لابتوب': ['laptop', 'computer', 'macbook'],
+        'كمبيوتر': ['computer', 'laptop', 'desktop'],
+        'حاسوب': ['computer', 'laptop'],
+        'تابلت': ['tablet', 'ipad'],
+        'سماعة': ['headphone', 'earphone', 'audio'],
+        'سماعات': ['headphones', 'earphones'],
+        'كاميرا': ['camera', 'photography'],
+        'تلفزيون': ['television', 'tv', 'screen'],
+        'تلفاز': ['television', 'tv'],
+        'شاشة': ['monitor', 'screen', 'display'],
+        
+        // سيارات
+        'سيارة': ['car', 'automobile', 'vehicle'],
+        'دراجة': ['bike', 'motorcycle', 'bicycle'],
+        'عربية': ['car', 'vehicle'],
+        
+        // ملابس
+        'ملابس': ['clothes', 'fashion', 'clothing'],
+        'ثوب': ['dress', 'clothes'],
+        'عباءة': ['abaya', 'dress'],
+        'قميص': ['shirt', 'clothes'],
+        'بنطال': ['pants', 'jeans'],
+        'حذاء': ['shoes', 'sneakers'],
+        'نعال': ['shoes', 'sandals'],
+        
+        // أثاث
+        'أثاث': ['furniture', 'home', 'interior'],
+        'كرسي': ['chair', 'furniture'],
+        'طاولة': ['table', 'desk', 'furniture'],
+        'سرير': ['bed', 'bedroom', 'furniture'],
+        'خزانة': ['wardrobe', 'closet', 'furniture'],
+        
+        // مجوهرات
+        'ذهب': ['gold', 'jewelry', 'necklace'],
+        'فضة': ['silver', 'jewelry'],
+        'ماس': ['diamond', 'jewelry'],
+        'خاتم': ['ring', 'jewelry'],
+        'سوار': ['bracelet', 'jewelry'],
+        
+        // عطور ومستحضرات
+        'عطر': ['perfume', 'fragrance', 'bottle'],
+        'كولونيا': ['perfume', 'cologne'],
+        'مكياج': ['makeup', 'cosmetics'],
+        
+        // كتب
+        'كتاب': ['book', 'reading', 'literature'],
+        'رواية': ['book', 'novel', 'reading'],
+        'مجلة': ['magazine', 'reading'],
+        
+        // رياضة
+        'كرة': ['ball', 'sports'],
+        'مضرب': ['racket', 'sports'],
+        'دراجة': ['bicycle', 'sports'],
+        
+        // أطعمة
+        'طعام': ['food', 'meal', 'cooking'],
+        'حلوى': ['dessert', 'sweet', 'cake'],
+        'قهوة': ['coffee', 'drink', 'cup'],
+        'شاي': ['tea', 'drink'],
+    };
+    
+    // البحث عن الكلمات المفتاحية في العنوان والوصف
+    const searchText = (title + ' ' + description).toLowerCase();
+    let selectedKeywords = ['product', 'shopping', 'sale'];
+    
+    for (const [arabicKeyword, englishKeywords] of Object.entries(keywordsMap)) {
+        if (searchText.includes(arabicKeyword)) {
+            selectedKeywords = [...englishKeywords, ...selectedKeywords];
+            break;
+        }
+    }
+    
+    // اختيار كلمة مفتاحية عشوائية
+    const randomKeyword = selectedKeywords[Math.floor(Math.random() * selectedKeywords.length)];
+    
+    // إنشاء رابط Unsplash ذكي
+    const encodedTitle = encodeURIComponent(title.substring(0, 20));
+    return `https://source.unsplash.com/600x400/?${randomKeyword},${encodedTitle}&orientation=landscape`;
+}
+
 // ========== نشر إعلان للتجار ==========
 async function postMerchantAd(event) {
     event.preventDefault();
@@ -677,16 +768,20 @@ async function postMerchantAd(event) {
         // إنشاء ID فريد للمنتج
         const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
-        // اختيار صورة عشوائية من Unsplash (بدلاً من رفع الصورة الحقيقية)
-        const unsplashImages = [
-            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
-        ];
-        
-        const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
+        // استخدام الصورة المرفوعة أو إنشاء صورة ذكية
+        let productImage = '';
+        if (merchantSelectedImage) {
+            // إذا كانت الصورة من النوع base64، نستخدم صورة ذكية
+            if (merchantSelectedImage.startsWith('data:image')) {
+                productImage = generateSmartImage(title, description);
+            } else {
+                // إذا كان الرابط مباشراً
+                productImage = merchantSelectedImage;
+            }
+        } else {
+            // إذا لم توجد صورة، نستخدم صورة ذكية
+            productImage = generateSmartImage(title, description);
+        }
         
         // إنشاء المنتج
         const newProduct = {
@@ -694,14 +789,15 @@ async function postMerchantAd(event) {
             title: title,
             price: parseFloat(price),
             description: description,
-            image: randomImage,
+            image: productImage,
             merchantId: currentUser.id,
             contact: contact,
             featured: false,
             date: new Date().toISOString().split('T')[0],
             source: 'local',
             synced: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            localImage: merchantSelectedImage // حفظ الصورة المحلية
         };
         
         console.log('📝 إنشاء منتج جديد:', newProduct);
@@ -751,7 +847,7 @@ async function postMerchantAd(event) {
                         title: title,
                         price: price,
                         description: description,
-                        image: randomImage,
+                        image: productImage,
                         contact: contact,
                         merchantId: serverUserId || currentUser.id,
                         featured: 'false'
@@ -764,6 +860,7 @@ async function postMerchantAd(event) {
                             products[productIndex].id = response.data.productId || productId;
                             products[productIndex].source = 'server';
                             products[productIndex].synced = true;
+                            delete products[productIndex].localImage; // حذف الصورة المحلية بعد المزامنة
                             
                             saveLocalData();
                             renderProducts();
@@ -1289,9 +1386,12 @@ function renderAdsTable() {
         const merchant = users.find(u => u.id == product.merchantId || u.email === product.merchantId);
         const row = document.createElement('tr');
         
+        // استخدام الصورة المحلية إذا كانت متاحة
+        const displayImage = product.localImage || product.image || 'https://via.placeholder.com/50';
+        
         row.innerHTML = `
             <td>
-                <img src="${product.image || 'https://via.placeholder.com/50'}" 
+                <img src="${displayImage}" 
                      alt="${product.title || 'منتج'}"
                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
                      onerror="this.src='https://via.placeholder.com/50'">
@@ -1506,10 +1606,13 @@ function showProductDetail(productId) {
     const merchant = users.find(u => u.id == product.merchantId || u.email === product.merchantId);
     const detailBody = document.getElementById('detailBody');
     
+    // استخدام الصورة المحلية إذا كانت متاحة
+    const displayImage = product.localImage || product.image || 'https://via.placeholder.com/400x300?text=No+Image';
+    
     detailBody.innerHTML = `
         <div class="detail-header">
             <div class="detail-image">
-                <img src="${product.image || 'https://via.placeholder.com/400x300?text=No+Image'}" 
+                <img src="${displayImage}" 
                      alt="${product.title}"
                      onerror="this.src='https://via.placeholder.com/400x300?text=Error+Loading'">
             </div>
