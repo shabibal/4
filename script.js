@@ -1,5 +1,5 @@
 // Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbzXuCCGsmDF3pZVsQ644Rrx3RWyqB5G8Z3K_Y1-K8sYTpoOzgFn-pgt5lzuvRZnnyZi7Q/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwC6ZSTDDN-cEv8ltjonYrTUwJCPkXKDRYITFP24qBcenPN46hZKRs2XE1rmRJvw7X3Jw/exec';
 
 // متغيرات عامة
 let users = [];
@@ -172,23 +172,24 @@ async function fetchData(action, params = {}) {
     }
 }
 
-// دالة مساعدة للاتصال بالAPI (POST)
+// دالة مساعدة للاتصال بالAPI (POST) - تم التعديل
 async function postData(action, params = {}) {
-    const formData = new FormData();
-    formData.append('action', action);
-    
-    for (const key in params) {
-        if (params[key] !== undefined && params[key] !== null) {
-            formData.append(key, params[key]);
-        }
-    }
-    
     try {
         console.log(`📤 إرسال بيانات: ${action}`, params);
+        
+        const requestData = {
+            action: action,
+            ...params
+        };
+        
         const response = await fetch(API_URL, {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
         });
+        
         const data = await response.json();
         return data;
     } catch (error) {
