@@ -1,5 +1,5 @@
 // Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbzlpKvDwcmDGtfEjgdzs3ABskVlBghi8cjOQSeo_xNkLth8mPOSlTYmTj_xKJnVDAq-xg/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzNc-YJT6RT5q94YQie05pDcL2SwbbR8Wz669u8uu-BlX4KNi3GLWgMIY-C5OhkZoJH0A/exec';
 
 // متغيرات عامة
 let users = [];
@@ -586,6 +586,7 @@ async function uploadImageToDrive() {
         }
     } catch (error) {
         console.error('❌ خطأ في رفع الصورة:', error);
+        alert('❌ خطأ في رفع الصورة. يرجى اختيار صورة أقل حجماً أو المحاولة مرة أخرى.');
         return null;
     }
 }
@@ -1175,10 +1176,15 @@ function initSampleData() {
 }
 
 // تشغيل البيانات التجريبية إذا لزم الأمر
-if (users.length === 0 && products.length === 0) {
-    initSampleData();
-    location.reload();
+function checkAndInitData() {
+    if (users.length === 0 && products.length === 0) {
+        initSampleData();
+        console.log('✅ تم إنشاء بيانات تجريبية');
+    }
 }
+
+// تحقق من البيانات عند بدء التشغيل
+checkAndInitData();
 
 console.log('🎯 جاهز للاستخدام!');
 console.log('📌 رابط الإدارة:', window.location.href);
