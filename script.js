@@ -8,6 +8,7 @@ let currentUser = null;
 let isAdminLoggedIn = false;
 let selectedImageData = null;
 let dataInitialized = false;
+let merchantSelectedImage = null;
 
 // تهيئة الموقع عند التحميل
 document.addEventListener('DOMContentLoaded', async function() {
@@ -25,6 +26,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // إعداد الأحداث
     setupEventListeners();
     
+    // إضافة زر مزامنة البيانات
+    addSyncButton();
+    
     try {
         await loadDataFromServer();
     } catch (error) {
@@ -37,6 +41,99 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     console.log('✅ تم تهيئة الموقع بنجاح');
 });
+
+// ==================== دالة مزامنة البيانات مع السيرفر ====================
+async function loadDataFromServer() {
+    try {
+        console.log('🔄 جاري تحميل البيانات من السيرفر...');
+        
+        // محاولة تحميل البيانات من السيرفر
+        const [productsResponse, usersResponse] = await Promise.allSettled([
+            fetchData('getProducts'),
+            fetchData('getUsers')
+        ]);
+        
+        // معالجة استجابة المنتجات
+        if (productsResponse.status === 'fulfilled' && productsResponse.value.status === 200) {
+            const serverProducts = productsResponse.value.data || [];
+            
+            // الحصول على المنتجات المحلية
+            const localProducts = JSON.parse(localStorage.getItem('webaidea_products')) || [];
+            
+            // ========== التحديث الهام: دمج المنتجات ==========
+            // إنشاء خريطة للتحقق من التكرارات
+            const productMap = new Map();
+            
+            // أولاً: إضافة جميع المنتجات من السيرفر
+            serverProducts.forEach(product => {
+                productMap.set(product.id, product);
+            });
+            
+            // ثانياً: إضافة المنتجات المحلية التي ليست في السيرفر
+            localProducts.forEach(product => {
+                // إذا كان المنتج المحلي غير موجود في السيرفر، أضفه
+                if (!productMap.has(product.id)) {
+                    productMap.set(product.id, product);
+                }
+            });
+            
+            // تحويل الخريطة إلى مصفوفة
+            products = Array.from(productMap.values());
+            
+            // حفظ في التخزين المحلي
+            localStorage.setItem('webaidea_products', JSON.stringify(products));
+            console.log(`✅ تم دمج المنتجات: ${serverProducts.length} من السيرفر + ${localProducts.length} محلية = ${products.length} منتج`);
+            
+        } else {
+            console.warn('⚠️ لم يتم تحميل المنتجات من السيرفر، استخدام البيانات المحلية فقط');
+            products = JSON.parse(localStorage.getItem('webaidea_products')) || [];
+        }
+        
+        // معالجة استجابة المستخدمين
+        if (usersResponse.status === 'fulfilled' && usersResponse.value.status === 200) {
+            const serverUsers = usersResponse.value.data || [];
+            const localUsers = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+            
+            // دمج المستخدمين بطريقة مشابهة
+            const userMap = new Map();
+            
+            serverUsers.forEach(user => {
+                userMap.set(user.email, user);
+            });
+            
+            localUsers.forEach(user => {
+                if (!userMap.has(user.email)) {
+                    userMap.set(user.email, user);
+                }
+            });
+            
+            users = Array.from(userMap.values());
+            localStorage.setItem('webaidea_users', JSON.stringify(users));
+            console.log(`✅ تم دمج المستخدمين: ${serverUsers.length} من السيرفر + ${localUsers.length} محلية = ${users.length} مستخدم`);
+            
+        } else {
+            console.warn('⚠️ لم يتم تحميل المستخدمين من السيرفر، استخدام البيانات المحلية فقط');
+            users = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+        }
+        
+        // تحديث جداول الإدارة إذا كانت مفتوحة
+        if (isAdminLoggedIn) {
+            renderMerchantsTable();
+            renderAccountsTable();
+            renderAdsTable();
+            populateMerchantSelect();
+        }
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات من السيرفر:', error);
+        
+        // استخدام البيانات المحلية فقط في حالة الخطأ
+        products = JSON.parse(localStorage.getItem('webaidea_products')) || [];
+        users = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+        
+        console.log(`⚠️ استخدام البيانات المحلية فقط: ${products.length} منتج، ${users.length} مستخدم`);
+    }
+}
 
 // تحميل البيانات المحلية من localStorage
 function loadLocalData() {
@@ -109,6 +206,10 @@ function logoutUser() {
         
         // إخفاء لوحة الإدارة إذا كانت مفتوحة
         showMainSite();
+        
+        // إزالة زر نشر الإعلان
+        const postBtn = document.getElementById('merchantPostBtn');
+        if (postBtn) postBtn.remove();
         
         alert('✅ تم تسجيل الخروج بنجاح.');
     }
@@ -301,8 +402,6 @@ function openMerchantAdModal() {
 }
 
 // دالة جديدة: معالجة رفع صورة للتجار
-let merchantSelectedImage = null;
-
 function handleMerchantImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -342,7 +441,7 @@ function closeMerchantAdModal() {
     merchantSelectedImage = null;
 }
 
-// دالة جديدة: نشر إعلان للتجار
+// ==================== دالة جديدة: نشر إعلان للتجار (محسن) ====================
 async function postMerchantAd(event) {
     event.preventDefault();
     
@@ -372,54 +471,89 @@ async function postMerchantAd(event) {
         // رفع الصورة
         const imageUrl = await uploadMerchantImage();
         
+        // إنشاء ID فريد للمنتج المحلي
+        const localProductId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
         // إنشاء المنتج محلياً
         const newProduct = {
-            id: Date.now(),
+            id: localProductId,
             title: title,
             price: parseFloat(price),
             description: description,
             image: imageUrl,
             merchantId: currentUser.id,
             contact: contact,
-            featured: false, // إعلان عادي غير مميز
-            date: new Date().toISOString().split('T')[0]
+            featured: false,
+            date: new Date().toISOString().split('T')[0],
+            source: 'local', // إضافة علامة لمعرفة مصدر المنتج
+            synced: false // لم يتم مزامنته مع السيرفر بعد
         };
         
-        // محاولة إرسال للسيرفر
-        try {
-            const response = await postData('addProduct', {
-                title: title,
-                price: parseFloat(price),
-                description: description,
-                image: imageUrl,
-                contact: contact,
-                merchantId: currentUser.id,
-                featured: 'false'
-            });
-            
-            if (response.status === 201) {
-                newProduct.id = response.data.productId;
-                console.log('✅ تم نشر الإعلان في السيرفر');
-            }
-        } catch (serverError) {
-            console.warn('⚠️ استخدام البيانات المحلية فقط:', serverError);
-        }
-        
-        // إضافة إلى البيانات المحلية
+        // ========== حفظ في التخزين المحلي أولاً ==========
         products.push(newProduct);
         localStorage.setItem('webaidea_products', JSON.stringify(products));
         
-        // إغلاق النافذة وإعادة التعيين
-        closeMerchantAdModal();
-        merchantSelectedImage = null;
-        
-        // تحديث العرض
+        // تحديث العرض فوراً
         renderProducts();
         if (isAdminLoggedIn) {
             renderAdsTable();
         }
         
-        alert('🎉 تم نشر إعلانك بنجاح!');
+        // إغلاق النافذة وإعادة التعيين
+        closeMerchantAdModal();
+        merchantSelectedImage = null;
+        
+        // محاولة إرسال للسيرفر في الخلفية
+        setTimeout(async () => {
+            try {
+                const response = await postData('addProduct', {
+                    title: title,
+                    price: parseFloat(price),
+                    description: description,
+                    image: imageUrl,
+                    contact: contact,
+                    merchantId: currentUser.id,
+                    featured: 'false'
+                });
+                
+                if (response.status === 201) {
+                    // تحديث ID المنتج من المحلي إلى ID السيرفر
+                    const serverProductId = response.data.productId;
+                    
+                    // البحث عن المنتج المحلي وتحديثه
+                    const productIndex = products.findIndex(p => p.id === localProductId);
+                    
+                    if (productIndex !== -1) {
+                        // حفظ الـ ID القديم للإشارة
+                        const oldId = products[productIndex].id;
+                        
+                        // تحديث المنتج
+                        products[productIndex].id = serverProductId;
+                        products[productIndex].source = 'server';
+                        products[productIndex].synced = true;
+                        
+                        // حفظ التحديث في localStorage
+                        localStorage.setItem('webaidea_products', JSON.stringify(products));
+                        
+                        console.log(`✅ تم مزامنة المنتج: ${oldId} → ${serverProductId}`);
+                        
+                        // تحديث العرض مرة أخرى مع ID الجديد
+                        renderProducts();
+                        if (isAdminLoggedIn) {
+                            renderAdsTable();
+                        }
+                        
+                        // إشعار المستخدم بنجاح المزامنة
+                        showNotification('تم مزامنة إعلانك مع السيرفر بنجاح!', 'success');
+                    }
+                }
+            } catch (serverError) {
+                console.warn('⚠️ تم حفظ المنتج محلياً فقط:', serverError);
+                showNotification('تم حفظ الإعلان محلياً. سيتم محاولة المزامنة لاحقاً.', 'warning');
+            }
+        }, 1000); // تأخير 1 ثانية لإرسال البيانات
+        
+        alert('🎉 تم نشر إعلانك بنجاح!\n\n✅ تم حفظه محلياً وجاري محاولة مزامنته مع السيرفر.');
         
     } catch (error) {
         console.error('❌ خطأ في نشر الإعلان:', error);
@@ -446,47 +580,6 @@ async function uploadMerchantImage() {
     } catch (error) {
         console.error('❌ خطأ في معالجة الصورة:', error);
         return 'https://via.placeholder.com/600x400?text=Product+Image';
-    }
-}
-
-// تحميل البيانات من السيرفر
-async function loadDataFromServer() {
-    try {
-        console.log('🔄 جاري تحميل البيانات من السيرفر...');
-        
-        const [productsResponse, usersResponse] = await Promise.allSettled([
-            fetchData('getProducts'),
-            fetchData('getUsers')
-        ]);
-        
-        // معالجة استجابة المنتجات
-        if (productsResponse.status === 'fulfilled' && productsResponse.value.status === 200) {
-            products = productsResponse.value.data || [];
-            localStorage.setItem('webaidea_products', JSON.stringify(products));
-            console.log(`✅ تم تحميل ${products.length} منتج من السيرفر`);
-        } else {
-            console.warn('⚠️ لم يتم تحميل المنتجات من السيرفر، استخدام البيانات المحلية');
-        }
-        
-        // معالجة استجابة المستخدمين
-        if (usersResponse.status === 'fulfilled' && usersResponse.value.status === 200) {
-            users = usersResponse.value.data || [];
-            localStorage.setItem('webaidea_users', JSON.stringify(users));
-            console.log(`✅ تم تحميل ${users.length} مستخدم من السيرفر`);
-        } else {
-            console.warn('⚠️ لم يتم تحميل المستخدمين من السيرفر، استخدام البيانات المحلية');
-        }
-        
-        // تحديث جداول الإدارة إذا كانت مفتوحة
-        if (isAdminLoggedIn) {
-            renderMerchantsTable();
-            renderAccountsTable();
-            renderAdsTable();
-            populateMerchantSelect();
-        }
-        
-    } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات من السيرفر:', error);
     }
 }
 
@@ -901,7 +994,10 @@ function renderProducts() {
     
     container.innerHTML = '';
     
-    if (products.length === 0) {
+    // الحصول على أحدث البيانات من التخزين المحلي
+    const latestProducts = JSON.parse(localStorage.getItem('webaidea_products')) || products;
+    
+    if (latestProducts.length === 0) {
         container.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #666;">
                 <i class="fas fa-box-open" style="font-size: 4rem; margin-bottom: 1rem; color: #ccc;"></i>
@@ -918,11 +1014,11 @@ function renderProducts() {
     }
     
     // فرز المنتجات: المميزة أولاً مع ترتيب عكسي للتاريخ (الأحدث أولاً)
-    const featuredProducts = products
+    const featuredProducts = latestProducts
         .filter(p => p.featured)
         .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     
-    const regularProducts = products
+    const regularProducts = latestProducts
         .filter(p => !p.featured)
         .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     
@@ -939,6 +1035,14 @@ function renderProducts() {
             card.style.position = 'relative';
             card.innerHTML = `<div class="special-badge"><i class="fas fa-crown"></i> مميز</div>`;
         }
+        
+        // إضافة علامة "محلي" للمنتجات غير المزامنة
+        const localBadge = product.source === 'local' && !product.synced ? 
+            `<div style="position: absolute; top: 10px; left: 10px; background: #ff9800; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 1;">
+                <i class="fas fa-laptop-house"></i> محلي
+            </div>` : '';
+        
+        card.innerHTML += localBadge;
         
         card.innerHTML += `
             <div class="product-image">
@@ -976,7 +1080,10 @@ function renderProducts() {
 
 // عرض تفاصيل المنتج
 function showProductDetail(productId) {
-    const product = products.find(p => p.id == productId);
+    // البحث عن المنتج في البيانات المحلية أولاً
+    const latestProducts = JSON.parse(localStorage.getItem('webaidea_products')) || products;
+    const product = latestProducts.find(p => p.id == productId);
+    
     if (!product) {
         alert('❌ المنتج غير موجود');
         return;
@@ -999,6 +1106,12 @@ function showProductDetail(productId) {
                 ${product.featured ? `
                     <div class="featured-badge">
                         <i class="fas fa-crown"></i> إعلان مميز
+                    </div>
+                ` : ''}
+                
+                ${product.source === 'local' && !product.synced ? `
+                    <div class="featured-badge" style="background: #ff9800;">
+                        <i class="fas fa-laptop-house"></i> محفوظ محلياً
                     </div>
                 ` : ''}
                 
@@ -1307,7 +1420,10 @@ function renderAdsTable() {
     const tbody = document.querySelector('#adsTable tbody');
     if (!tbody) return;
     
-    if (products.length === 0) {
+    // الحصول على أحدث البيانات من التخزين المحلي
+    const latestProducts = JSON.parse(localStorage.getItem('webaidea_products')) || products;
+    
+    if (latestProducts.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
@@ -1321,9 +1437,16 @@ function renderAdsTable() {
     
     tbody.innerHTML = '';
     
-    products.forEach(product => {
+    latestProducts.forEach(product => {
         const merchant = users.find(u => u.id == product.merchantId);
         const row = document.createElement('tr');
+        
+        // إضافة علامة للمنتجات المحلية
+        const localBadge = product.source === 'local' && !product.synced ? 
+            `<span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; margin-right: 5px;">
+                <i class="fas fa-laptop-house"></i> محلي
+            </span>` : '';
+        
         row.innerHTML = `
             <td>
                 <img src="${product.image || 'https://via.placeholder.com/50'}" 
@@ -1331,7 +1454,7 @@ function renderAdsTable() {
                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
                      onerror="this.src='https://via.placeholder.com/50'">
             </td>
-            <td>${product.title || 'بدون عنوان'}</td>
+            <td>${localBadge} ${product.title || 'بدون عنوان'}</td>
             <td>${product.price || 0}</td>
             <td>${merchant ? merchant.name : 'غير معروف'}</td>
             <td>${product.date || 'غير معروف'}</td>
@@ -1346,6 +1469,11 @@ function renderAdsTable() {
                     ${!product.featured ? `
                         <button class="action-btn btn-approve" onclick="makeFeatured(${product.id})" title="جعله إعلان مميز">
                             <i class="fas fa-crown"></i>
+                        </button>
+                    ` : ''}
+                    ${product.source === 'local' && !product.synced ? `
+                        <button class="action-btn btn-secondary" onclick="syncSingleProduct('${product.id}')" title="مزامنة مع السيرفر">
+                            <i class="fas fa-sync-alt"></i>
                         </button>
                     ` : ''}
                 </div>
@@ -1624,7 +1752,9 @@ async function postAdminAd(event) {
                 contact: contact,
                 merchantId: merchantId,
                 featured: true, // إعلان مميز
-                date: new Date().toISOString().split('T')[0]
+                date: new Date().toISOString().split('T')[0],
+                source: 'server',
+                synced: true
             };
             
             products.push(newProduct);
@@ -1650,7 +1780,7 @@ async function postAdminAd(event) {
         } else {
             // إذا فشل الاتصال بالسيرفر، أضف المنتج محلياً
             const newProduct = {
-                id: Date.now(),
+                id: 'local_admin_' + Date.now(),
                 title: title,
                 price: parseFloat(price),
                 description: description,
@@ -1658,7 +1788,9 @@ async function postAdminAd(event) {
                 contact: contact,
                 merchantId: merchantId,
                 featured: true, // إعلان مميز
-                date: new Date().toISOString().split('T')[0]
+                date: new Date().toISOString().split('T')[0],
+                source: 'local',
+                synced: false
             };
             
             products.push(newProduct);
@@ -1685,28 +1817,32 @@ async function removeAd(productId) {
     if (!confirm('هل تريد حذف هذا الإعلان؟')) return;
     
     try {
-        const response = await postData('deleteProduct', {
-            adminEmail: 'msdfrrt@gmail.com',
-            adminPassword: 'Shabib95873061@99',
-            productId: productId
-        });
+        // حذف من البيانات المحلية أولاً
+        products = products.filter(p => p.id != productId);
+        localStorage.setItem('webaidea_products', JSON.stringify(products));
         
-        if (response.status === 200) {
-            // تحديث البيانات المحلية
-            products = products.filter(p => p.id != productId);
-            localStorage.setItem('webaidea_products', JSON.stringify(products));
+        // محاولة حذف من السيرفر إذا كان منتجاً من السيرفر
+        const product = products.find(p => p.id == productId);
+        if (product && product.source === 'server') {
+            const response = await postData('deleteProduct', {
+                adminEmail: 'msdfrrt@gmail.com',
+                adminPassword: 'Shabib95873061@99',
+                productId: productId
+            });
             
-            // تحديث الجداول والعروض
-            renderAdsTable();
-            renderProducts();
-            
-            alert('✅ تم حذف الإعلان بنجاح.');
-        } else {
-            alert(`❌ ${response.message || 'فشلت العملية'}`);
+            if (response.status === 200) {
+                console.log('✅ تم حذف المنتج من السيرفر');
+            }
         }
+        
+        // تحديث الجداول والعروض
+        renderAdsTable();
+        renderProducts();
+        
+        alert('✅ تم حذف الإعلان بنجاح.');
     } catch (error) {
         console.error('❌ خطأ في حذف الإعلان:', error);
-        alert('⚠️ حدث خطأ أثناء حذف الإعلان');
+        alert('⚠️ تم حذف الإعلان محلياً فقط');
     }
 }
 
@@ -1745,13 +1881,196 @@ function viewUserAds(userId) {
     if (userAds.length > 0) {
         let message = `📋 إعلانات ${user.name} (${userAds.length} إعلان):\n\n`;
         userAds.forEach((ad, index) => {
-            message += `${index + 1}. ${ad.title} - ${ad.price} ريال ${ad.featured ? '⭐ مميز' : ''}\n`;
+            message += `${index + 1}. ${ad.title} - ${ad.price} ريال ${ad.featured ? '⭐ مميز' : ''} ${ad.source === 'local' ? '📱 محلي' : ''}\n`;
         });
         alert(message);
     } else {
         alert(`ℹ️ ليس لدى ${user.name} أي إعلانات منشورة.`);
     }
 }
+
+// ==================== وظائف المزامنة ====================
+
+// إضافة زر لتحديث البيانات يدوياً
+function addSyncButton() {
+    // إزالة الزر السابق إذا كان موجوداً
+    const oldSyncBtn = document.getElementById('syncDataBtn');
+    if (oldSyncBtn) oldSyncBtn.remove();
+    
+    // إنشاء زر جديد
+    const syncBtn = document.createElement('button');
+    syncBtn.id = 'syncDataBtn';
+    syncBtn.className = 'btn btn-secondary';
+    syncBtn.style.cssText = `
+        position: fixed;
+        bottom: 70px;
+        right: 20px;
+        z-index: 1000;
+        padding: 10px 15px;
+        border-radius: 25px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+    `;
+    syncBtn.innerHTML = `<i class="fas fa-sync-alt"></i> مزامنة`;
+    syncBtn.onclick = async function() {
+        await syncDataManually();
+    };
+    
+    document.body.appendChild(syncBtn);
+}
+
+// دالة المزامنة اليدوية
+async function syncDataManually() {
+    if (confirm('هل تريد مزامنة البيانات مع السيرفر؟\n\nسيتم دمج البيانات المحلية مع بيانات السيرفر.')) {
+        try {
+            const syncBtn = document.getElementById('syncDataBtn');
+            if (syncBtn) {
+                syncBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري المزامنة...`;
+                syncBtn.disabled = true;
+            }
+            
+            await loadDataFromServer();
+            renderProducts();
+            
+            if (syncBtn) {
+                syncBtn.innerHTML = `<i class="fas fa-check"></i> تمت المزامنة`;
+                setTimeout(() => {
+                    syncBtn.innerHTML = `<i class="fas fa-sync-alt"></i> مزامنة`;
+                    syncBtn.disabled = false;
+                }, 2000);
+            }
+            
+            alert('✅ تمت مزامنة البيانات بنجاح!');
+            
+        } catch (error) {
+            console.error('❌ خطأ في المزامنة:', error);
+            alert('⚠️ حدث خطأ أثناء مزامنة البيانات');
+            
+            const syncBtn = document.getElementById('syncDataBtn');
+            if (syncBtn) {
+                syncBtn.innerHTML = `<i class="fas fa-sync-alt"></i> مزامنة`;
+                syncBtn.disabled = false;
+            }
+        }
+    }
+}
+
+// دالة جديدة: مزامنة منتج واحد مع السيرفر
+async function syncSingleProduct(productId) {
+    const product = products.find(p => p.id == productId);
+    if (!product) {
+        alert('❌ المنتج غير موجود');
+        return;
+    }
+    
+    if (product.source === 'server' || product.synced) {
+        alert('ℹ️ هذا المنتج مزامن بالفعل مع السيرفر');
+        return;
+    }
+    
+    if (!confirm('هل تريد مزامنة هذا المنتج مع السيرفر؟')) return;
+    
+    try {
+        const response = await postData('addProduct', {
+            title: product.title,
+            price: product.price,
+            description: product.description,
+            image: product.image,
+            contact: product.contact,
+            merchantId: product.merchantId,
+            featured: product.featured ? 'true' : 'false'
+        });
+        
+        if (response.status === 201) {
+            // تحديث المنتج
+            const productIndex = products.findIndex(p => p.id === productId);
+            if (productIndex !== -1) {
+                const oldId = products[productIndex].id;
+                products[productIndex].id = response.data.productId;
+                products[productIndex].source = 'server';
+                products[productIndex].synced = true;
+                
+                localStorage.setItem('webaidea_products', JSON.stringify(products));
+                
+                // تحديث العرض
+                renderAdsTable();
+                renderProducts();
+                
+                alert(`✅ تم مزامنة المنتج بنجاح!`);
+            }
+        } else {
+            alert('❌ فشلت مزامنة المنتج مع السيرفر');
+        }
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة المنتج:', error);
+        alert('⚠️ حدث خطأ أثناء مزامنة المنتج');
+    }
+}
+
+// دالة جديدة: عرض إشعار
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 3000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = '#4CAF50';
+    } else if (type === 'warning') {
+        notification.style.background = '#ff9800';
+    } else if (type === 'error') {
+        notification.style.background = '#f44336';
+    } else {
+        notification.style.background = '#2196F3';
+    }
+    
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // إزالة الإشعار بعد 3 ثواني
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// إضافة أنماط CSS للرسوم المتحركة
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
 
 // ==================== وظائف مساعدة ====================
 
@@ -1831,7 +2150,9 @@ function initSampleData() {
                 merchantId: "1",
                 contact: "+968 1234 5678",
                 date: "2023-10-15",
-                featured: true
+                featured: true,
+                source: 'server',
+                synced: true
             },
             {
                 id: 2,
@@ -1842,7 +2163,9 @@ function initSampleData() {
                 merchantId: "1",
                 contact: "+968 9876 5432",
                 date: "2023-10-20",
-                featured: false
+                featured: false,
+                source: 'server',
+                synced: true
             }
         ];
         localStorage.setItem('webaidea_products', JSON.stringify(products));
