@@ -107,7 +107,7 @@ function updateUI() {
         }
         if (adminBtn) adminBtn.style.display = 'none';
         
-        // ⭐⭐ إضافة: عرض زر نشر الإعلان إذا كان المستخدم تاجراً
+        // عرض زر نشر الإعلان إذا كان المستخدم تاجراً
         if (currentUser.type === 'merchant') {
             showMerchantPostButton();
         }
@@ -127,7 +127,7 @@ function updateUI() {
     }
 }
 
-// ⭐⭐ دالة جديدة: عرض خيارات المستخدم
+// دالة جديدة: عرض خيارات المستخدم
 function showUserOptions() {
     const options = [];
     
@@ -137,6 +137,7 @@ function showUserOptions() {
     
     if (currentUser.type === 'merchant') {
         options.push(`\n✅ يمكنك نشر إعلانات عادية`);
+        options.push(`📍 اضغط على زر "نشر إعلان" في أسفل الصفحة`);
     } else if (currentUser.type === 'user') {
         options.push(`\n⏳ حسابك عادي، تواصل مع الإدارة ليصبح تاجراً`);
     }
@@ -145,7 +146,7 @@ function showUserOptions() {
     alert(message);
 }
 
-// ⭐⭐ دالة جديدة: عرض زر نشر الإعلان للتجار
+// دالة جديدة: عرض زر نشر الإعلان للتجار
 function showMerchantPostButton() {
     // إزالة الزر السابق إذا كان موجوداً
     const oldBtn = document.getElementById('merchantPostBtn');
@@ -176,7 +177,7 @@ function showMerchantPostButton() {
     document.body.appendChild(postBtn);
 }
 
-// ⭐⭐ دالة جديدة: فتح نافذة نشر إعلان للتجار
+// دالة جديدة: فتح نافذة نشر إعلان للتجار
 function openMerchantAdModal() {
     const modal = document.createElement('div');
     modal.id = 'merchantAdModal';
@@ -252,7 +253,7 @@ function openMerchantAdModal() {
     document.body.appendChild(modal);
 }
 
-// ⭐⭐ دالة جديدة: معالجة رفع صورة للتجار
+// دالة جديدة: معالجة رفع صورة للتجار
 let merchantSelectedImage = null;
 
 function handleMerchantImageUpload(event) {
@@ -287,14 +288,14 @@ function handleMerchantImageUpload(event) {
     reader.readAsDataURL(file);
 }
 
-// ⭐⭐ دالة جديدة: إغلاق نافذة نشر إعلان للتجار
+// دالة جديدة: إغلاق نافذة نشر إعلان للتجار
 function closeMerchantAdModal() {
     const modal = document.getElementById('merchantAdModal');
     if (modal) modal.remove();
     merchantSelectedImage = null;
 }
 
-// ⭐⭐ دالة جديدة: نشر إعلان للتجار
+// دالة جديدة: نشر إعلان للتجار
 async function postMerchantAd(event) {
     event.preventDefault();
     
@@ -321,7 +322,7 @@ async function postMerchantAd(event) {
     if (!confirm('هل تريد نشر هذا الإعلان؟')) return;
     
     try {
-        // رفع الصورة (نسخة مبسطة)
+        // رفع الصورة
         const imageUrl = await uploadMerchantImage();
         
         // إنشاء المنتج محلياً
@@ -333,7 +334,7 @@ async function postMerchantAd(event) {
             image: imageUrl,
             merchantId: currentUser.id,
             contact: contact,
-            featured: false, // ⭐ إعلان عادي غير مميز
+            featured: false, // إعلان عادي غير مميز
             date: new Date().toISOString().split('T')[0]
         };
         
@@ -379,7 +380,7 @@ async function postMerchantAd(event) {
     }
 }
 
-// ⭐⭐ دالة جديدة: رفع صورة للتجار
+// دالة جديدة: رفع صورة للتجار
 async function uploadMerchantImage() {
     if (!merchantSelectedImage) return null;
     
@@ -594,7 +595,7 @@ async function handleAuth(event) {
             let user = users.find(u => u.email === email && u.password === password);
             
             if (user) {
-                // ✅ وجد المستخدم في البيانات المحلية
+                // وجد المستخدم في البيانات المحلية
                 console.log('✅ تسجيل دخول ناجح من البيانات المحلية:', user);
                 currentUser = user;
                 isAdminLoggedIn = user.type === 'admin';
@@ -678,7 +679,7 @@ async function handleAuth(event) {
             } catch (serverError) {
                 console.warn('⚠️ خطأ في السيرفر، إنشاء حساب محلي:', serverError);
                 
-                // ⭐⭐ إنشاء حساب محلي إذا فشل السيرفر
+                // إنشاء حساب محلي إذا فشل السيرفر
                 const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
                 const newUser = {
                     id: newId,
@@ -734,7 +735,7 @@ function renderProducts() {
         return;
     }
     
-    // ⭐⭐ فرز المنتجات: المميزة أولاً مع ترتيب عكسي للتاريخ (الأحدث أولاً)
+    // فرز المنتجات: المميزة أولاً مع ترتيب عكسي للتاريخ (الأحدث أولاً)
     const featuredProducts = products
         .filter(p => p.featured)
         .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
@@ -1097,6 +1098,9 @@ function renderAccountsTable() {
                         <button class="action-btn btn-approve" onclick="makeMerchant('${user.id}')" title="ترقية إلى تاجر">
                             <i class="fas fa-user-check"></i> جعله تاجر
                         </button>
+                        <button class="action-btn btn-secondary" onclick="makeMerchantLocal('${user.id}')" title="ترقية محلياً">
+                            <i class="fas fa-laptop-house"></i> محلياً
+                        </button>
                     ` : user.type === 'merchant' ? 
                         '<span style="color:#2e7d32; padding: 5px 10px; background: #e8f5e9; border-radius: 4px;">تاجر بالفعل</span>' :
                         '<span style="color:#d32f2f; padding: 5px 10px; background: #ffebee; border-radius: 4px;">مدير النظام</span>'
@@ -1223,16 +1227,20 @@ function searchTable(tableId, query) {
 
 // ==================== إجراءات الإدارة ====================
 
-// ترقية مستخدم إلى تاجر
+// ترقية مستخدم إلى تاجر (مع السيرفر)
 async function makeMerchant(userId) {
     if (!confirm('هل تريد حقًا ترقية هذا المستخدم إلى تاجر؟')) return;
     
     try {
+        console.log('🔄 محاولة ترقية المستخدم:', userId);
+        
         const response = await postData('updateUserType', {
             adminEmail: 'msdfrrt@gmail.com',
             adminPassword: 'Shabib95873061@99',
-            userId: userId
+            userId: String(userId) // إرسال ID كنص
         });
+        
+        console.log('استجابة السيرفر:', response);
         
         if (response.status === 200) {
             // تحديث البيانات المحلية
@@ -1246,14 +1254,94 @@ async function makeMerchant(userId) {
                 renderAccountsTable();
                 populateMerchantSelect();
                 
-                alert('✅ تم ترقية المستخدم إلى تاجر بنجاح.');
+                // إذا كان المستخدم مسجل دخوله، تحديث واجهته
+                if (currentUser && currentUser.id == userId) {
+                    currentUser.type = 'merchant';
+                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                    updateUI();
+                    
+                    alert(`✅ تم ترقية ${user.name} إلى تاجر بنجاح!\n\n🎉 يمكنك الآن نشر إعلاناتك.`);
+                } else {
+                    alert(`✅ تم ترقية المستخدم إلى تاجر بنجاح.`);
+                }
+            } else {
+                // إذا لم يكن المستخدم في البيانات المحلية، جلب البيانات من السيرفر
+                console.log('المستخدم غير موجود محلياً، جاري تحميل البيانات من السيرفر...');
+                await loadDataFromServer();
+                alert('✅ تم ترقية المستخدم إلى تاجر. جاري تحديث البيانات...');
             }
         } else {
-            alert(`❌ ${response.message || 'فشلت العملية'}`);
+            alert(`❌ ${response.message || 'فشلت العملية'}\n\nيمكنك ترقيته محلياً في الوقت الحالي.`);
+            
+            // بديل: تحديث البيانات المحلية
+            const user = users.find(u => u.id == userId);
+            if (user && user.type === 'user') {
+                user.type = 'merchant';
+                localStorage.setItem('webaidea_users', JSON.stringify(users));
+                
+                renderMerchantsTable();
+                renderAccountsTable();
+                populateMerchantSelect();
+                
+                alert('✅ تم ترقيته محلياً. البيانات ستنعكس عند تحديث السيرفر.');
+            }
         }
     } catch (error) {
         console.error('❌ خطأ في ترقية المستخدم:', error);
-        alert('⚠️ حدث خطأ أثناء ترقية المستخدم');
+        
+        // بديل: تحديث البيانات المحلية
+        const user = users.find(u => u.id == userId);
+        if (user && user.type === 'user') {
+            if (confirm('⚠️ خطأ في الاتصال بالسيرفر. هل تريد ترقيته محلياً؟')) {
+                user.type = 'merchant';
+                localStorage.setItem('webaidea_users', JSON.stringify(users));
+                
+                renderMerchantsTable();
+                renderAccountsTable();
+                populateMerchantSelect();
+                
+                alert('✅ تم ترقيته محلياً. البيانات ستنعكس عند تحديث السيرفر.');
+            }
+        } else {
+            alert('⚠️ حدث خطأ أثناء ترقية المستخدم');
+        }
+    }
+}
+
+// دالة جديدة: ترقية مستخدم محلياً (بدون سيرفر)
+function makeMerchantLocal(userId) {
+    const user = users.find(u => u.id == userId);
+    if (!user) {
+        alert('❌ المستخدم غير موجود في البيانات المحلية');
+        return;
+    }
+    
+    if (user.type === 'user') {
+        user.type = 'merchant';
+        localStorage.setItem('webaidea_users', JSON.stringify(users));
+        
+        // تحديث الجداول
+        renderMerchantsTable();
+        renderAccountsTable();
+        populateMerchantSelect();
+        
+        // إذا كان المستخدم مسجل دخوله، تحديث واجهته
+        if (currentUser && currentUser.id == userId) {
+            currentUser.type = 'merchant';
+            localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+            updateUI();
+            
+            // عرض زر نشر الإعلان للتاجر
+            showMerchantPostButton();
+            
+            alert(`✅ تم ترقية ${user.name} إلى تاجر بنجاح!\n\n🎉 يمكنك الآن نشر إعلاناتك من الزر الموجود في أسفل الصفحة.`);
+        } else {
+            alert(`✅ تم ترقية ${user.name} إلى تاجر بنجاح.`);
+        }
+    } else if (user.type === 'merchant') {
+        alert('ℹ️ هذا المستخدم تاجر بالفعل.');
+    } else if (user.type === 'admin') {
+        alert('ℹ️ هذا المستخدم مدير النظام.');
     }
 }
 
@@ -1272,7 +1360,20 @@ async function removeMerchant(userId) {
             renderAccountsTable();
             populateMerchantSelect();
             
-            alert('✅ تم إلغاء صلاحية التاجر.');
+            // إذا كان المستخدم مسجل دخوله، تحديث واجهته
+            if (currentUser && currentUser.id == userId) {
+                currentUser.type = 'user';
+                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                updateUI();
+                
+                // إزالة زر نشر الإعلان
+                const postBtn = document.getElementById('merchantPostBtn');
+                if (postBtn) postBtn.remove();
+                
+                alert(`✅ تم إلغاء صلاحية التاجر عن ${user.name}.`);
+            } else {
+                alert('✅ تم إلغاء صلاحية التاجر.');
+            }
         }
     } catch (error) {
         console.error('❌ خطأ في إلغاء صلاحية التاجر:', error);
@@ -1319,7 +1420,7 @@ async function postAdminAd(event) {
             image: imageUrl,
             contact: contact,
             merchantId: merchantId,
-            featured: 'true' // ⭐⭐ إعلان مميز
+            featured: 'true' // إعلان مميز
         });
         
         if (response.status === 201) {
@@ -1332,7 +1433,7 @@ async function postAdminAd(event) {
                 image: imageUrl,
                 contact: contact,
                 merchantId: merchantId,
-                featured: true, // ⭐⭐ إعلان مميز
+                featured: true, // إعلان مميز
                 date: new Date().toISOString().split('T')[0]
             };
             
@@ -1357,7 +1458,7 @@ async function postAdminAd(event) {
             
             alert('🎉 تم نشر الإعلان المميز بنجاح!\n\n⭐ سيظهر في بداية الصفحة.');
         } else {
-            // ⭐ إذا فشل الاتصال بالسيرفر، أضف المنتج محلياً
+            // إذا فشل الاتصال بالسيرفر، أضف المنتج محلياً
             const newProduct = {
                 id: Date.now(),
                 title: title,
@@ -1366,7 +1467,7 @@ async function postAdminAd(event) {
                 image: imageUrl,
                 contact: contact,
                 merchantId: merchantId,
-                featured: true, // ⭐⭐ إعلان مميز
+                featured: true, // إعلان مميز
                 date: new Date().toISOString().split('T')[0]
             };
             
@@ -1536,7 +1637,7 @@ function initSampleData() {
                 merchantId: 1,
                 contact: "+968 1234 5678",
                 date: "2023-10-15",
-                featured: true // ⭐⭐ إعلان مميز
+                featured: true
             },
             {
                 id: 2,
@@ -1547,7 +1648,7 @@ function initSampleData() {
                 merchantId: 1,
                 contact: "+968 9876 5432",
                 date: "2023-10-20",
-                featured: false // ⭐⭐ إعلان عادي
+                featured: false
             },
             {
                 id: 3,
