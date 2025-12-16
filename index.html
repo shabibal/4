@@ -3,527 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAidea عُمان - منصة البيع والشراء العمانية</title>
-    <link rel="stylesheet" href="style.css">
+    <title>webaidea - منصة التجارة الإلكترونية</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- تم إزالة العلم العماني -->
-
-    <header>
+    <!-- شريط التنقل -->
+    <nav class="navbar">
         <div class="container">
-            <div class="logo-section">
-                <h1><i class="fas fa-store"></i> WebAidea <span class="oman-text">عُمان</span></h1>
-                <p class="tagline">منصة البيع والشراء الأولى في سلطنة عُمان</p>
+            <div class="nav-logo">
+                <h1>webaidea</h1>
             </div>
-            <nav id="main-nav">
-                <!-- سيتم التحكم في المحتوى هنا بواسطة JavaScript -->
-            </nav>
-        </div>
-    </header>
-
-    <!-- رسالة تفعيل البزنس -->
-    <div id="business-activation-alert" class="business-alert hidden">
-        <div class="alert-content">
-            <i class="fas fa-crown"></i>
-            <div>
-                <h4>تفعيل حساب Business</h4>
-                <p>لتفعيل حسابك كتاجر والحصول على مميزات خاصة، تواصل معنا على <strong>واتساب: +968 95873061</strong></p>
+            <div class="nav-menu">
+                <ul>
+                    <li><a href="#home">الرئيسية</a></li>
+                    <li><a href="#products">المنتجات</a></li>
+                    <li><a href="#contact">التواصل</a></li>
+                    <li><a href="#" id="loginBtn">تسجيل الدخول</a></li>
+                </ul>
             </div>
-            <button class="close-alert-btn" id="close-business-alert">&times;</button>
-        </div>
-    </div>
-
-    <!-- نافذة انشاء حساب -->
-    <div id="register-modal" class="modal-overlay hidden">
-        <div class="modal-content register-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="register-form-modal">
-                    <div class="form-group">
-                        <label for="register-name-modal">
-                            <i class="fas fa-user"></i> الاسم الكامل *
-                        </label>
-                        <input type="text" id="register-name-modal" placeholder="أحمد محمد" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="register-email-modal">
-                            <i class="fas fa-envelope"></i> البريد الإلكتروني *
-                        </label>
-                        <input type="email" id="register-email-modal" placeholder="example@email.com" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="register-password-modal">
-                                <i class="fas fa-lock"></i> كلمة المرور *
-                            </label>
-                            <input type="password" id="register-password-modal" placeholder="6 أحرف على الأقل" 
-                                   minlength="6" required>
-                            <div class="password-toggle">
-                                <i class="fas fa-eye" id="toggle-register-password-modal"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="register-confirm-password-modal">
-                                <i class="fas fa-lock"></i> تأكيد كلمة المرور *
-                            </label>
-                            <input type="password" id="register-confirm-password-modal" 
-                                   placeholder="أعد إدخال كلمة المرور" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="agree-terms-modal" required>
-                            <span>أوافق على <a href="#" class="terms-link">الشروط والأحكام</a></span>
-                        </label>
-                    </div>
-                    
-                    <div class="form-buttons">
-                        <button type="submit" class="btn btn-primary btn-block">
-                            <i class="fas fa-user-plus"></i> إنشاء حساب جديد
-                        </button>
-                    </div>
-                    
-                    <p class="login-link">
-                        لديك حساب بالفعل؟ <a href="#" id="switch-to-login-modal">سجل الدخول هنا</a>
-                    </p>
-                </form>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <!-- نافذة تسجيل الدخول -->
-    <div id="login-modal" class="modal-overlay hidden">
-        <div class="modal-content login-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="login-form-modal">
-                    <div class="form-group">
-                        <label for="login-email-modal">
-                            <i class="fas fa-envelope"></i> البريد الإلكتروني
-                        </label>
-                        <input type="email" id="login-email-modal" placeholder="example@email.com" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="login-password-modal">
-                            <i class="fas fa-lock"></i> كلمة المرور
-                        </label>
-                        <input type="password" id="login-password-modal" placeholder="********" required>
-                        <div class="password-toggle">
-                            <i class="fas fa-eye" id="toggle-login-password-modal"></i>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-block">
-                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-                    </button>
-                    
-                    <p class="login-link">
-                        ليس لديك حساب؟ <a href="#" id="switch-to-register-modal">إنشاء حساب جديد</a>
-                    </p>
-                </form>
+    <!-- القسم الرئيسي -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>منصة متكاملة لعرض منتجاتك</h2>
+                <p>انضم إلينا اليوم واعرض منتجاتك لآلاف المستخدمين</p>
+                <a href="#contact" class="btn btn-primary">تواصل معنا لنشر إعلانك</a>
             </div>
         </div>
-    </div>
+    </section>
 
-    <main class="container">
-        <!-- صفحة المنتجات -->
-        <section id="products-view">
-            <div class="page-header">
-                <div class="header-left">
-                    <h2><i class="fas fa-boxes"></i> جميع المنتجات</h2>
-                    <p class="subtitle">تصفح أفضل العروض في سلطنة عُمان</p>
+    <!-- قسم المنتجات -->
+    <section id="products" class="products">
+        <div class="container">
+            <h2 class="section-title">المنتجات المعروضة</h2>
+            <div class="product-filters">
+                <button class="filter-btn active" data-filter="all">الكل</button>
+                <button class="filter-btn" data-filter="featured">مميز</button>
+                <button class="filter-btn" data-filter="normal">عادي</button>
+            </div>
+            <div class="products-grid" id="productsGrid">
+                <!-- سيتم إضافة المنتجات هنا عبر JavaScript -->
+            </div>
+            <div class="load-more">
+                <button id="loadMoreBtn" class="btn btn-secondary">عرض المزيد</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم التواصل -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2 class="section-title">تواصل معنا</h2>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h3>لنشر إعلانك</h3>
+                    <p>تواصل معنا عبر إنستغرام لنشر منتجاتك على منصتنا</p>
+                    <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" target="_blank" class="btn btn-primary">
+                        <i class="fab fa-instagram"></i> تابعنا على إنستغرام
+                    </a>
                 </div>
-                <div class="header-actions">
-                    <div class="location-badge">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>سلطنة عُمان</span>
-                    </div>
-                    <div class="currency-badge">
-                        <i class="fas fa-coins"></i>
-                        <span>ريال عماني (OMR)</span>
-                    </div>
+                <div class="contact-form">
+                    <h3>أو أرسل لنا رسالة</h3>
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <input type="text" id="name" placeholder="الاسم الكامل" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="email" placeholder="البريد الإلكتروني" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" placeholder="رسالتك" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">إرسال الرسالة</button>
+                    </form>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- فلاتر البحث -->
-            <div class="filters-section">
-                <div class="filters-row">
-                    <div class="filter-group">
-                        <button class="filter-btn active" data-filter="all">
-                            <i class="fas fa-th-large"></i> الكل
-                        </button>
-                        <button class="filter-btn" data-filter="featured">
-                            <i class="fas fa-star"></i> المميزة
-                        </button>
-                        <button class="filter-btn" data-filter="new">
-                            <i class="fas fa-fire"></i> جديدة
-                        </button>
-                    </div>
+    <!-- نموذج تسجيل الدخول -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>تسجيل الدخول</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                </div>
+                <button type="submit" class="btn btn-primary">دخول</button>
+                <p class="register-link">ليس لديك حساب؟ <a href="#" id="showRegisterForm">سجل الآن</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- نموذج التسجيل -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>إنشاء حساب جديد</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <input type="text" id="registerName" placeholder="الاسم الكامل" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="registerEmail" placeholder="البريد الإلكتروني" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="كلمة المرور" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="confirmPassword" placeholder="تأكيد كلمة المرور" required>
+                </div>
+                <button type="submit" class="btn btn-primary">إنشاء حساب</button>
+                <p class="register-link">لديك حساب بالفعل؟ <a href="#" id="showLoginForm">سجل دخول</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- نموذج إضافة منتج (للتجار المعتمدين) -->
+    <div class="modal" id="addProductModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>نشر إعلان جديد</h2>
+            <form id="addProductForm">
+                <div class="form-group">
+                    <label for="productType">نوع الإعلان</label>
+                    <select id="productType">
+                        <option value="normal">إعلان عادي</option>
+                        <option value="featured" id="featuredOption" disabled>إعلان مميز (للإدارة فقط)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productName">اسم المنتج</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">السعر</label>
+                    <input type="number" id="productPrice" required>
+                </div>
+                <div class="form-group">
+                    <label for="productContact">رقم التواصل</label>
+                    <input type="tel" id="productContact" required>
+                </div>
+                <div class="form-group">
+                    <label for="productDescription">وصف المنتج</label>
+                    <textarea id="productDescription" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productImage">صورة المنتج</label>
+                    <input type="file" id="productImage" accept="image/*">
+                    <div class="image-preview" id="imagePreview"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">نشر الإعلان</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- صفحة الإدارة (مخفية) -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <div class="container">
+                <h2>لوحة التحكم - webaidea</h2>
+                <button id="logoutBtn" class="btn btn-secondary">تسجيل الخروج</button>
+            </div>
+        </div>
+        <div class="admin-content">
+            <div class="container">
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="merchants">التجار</button>
+                    <button class="tab-btn" data-tab="accounts">الحسابات</button>
+                    <button class="tab-btn" data-tab="ads">الإعلانات المنشورة</button>
+                    <button class="tab-btn" data-tab="newAd">نشر إعلان</button>
+                </div>
+                
+                <!-- تبويب التجار -->
+                <div class="tab-content active" id="merchants">
+                    <h3>التجار المعتمدون</h3>
                     <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="product-search" placeholder="ابحث عن منتج...">
+                        <input type="text" id="merchantSearch" placeholder="البحث عن تاجر...">
                     </div>
-                </div>
-                
-                <div class="price-filter">
-                    <label for="price-range">فلترة بالسعر:</label>
-                    <input type="range" id="price-range" min="0" max="1000" value="1000">
-                    <span id="price-value">أي سعر</span>
-                </div>
-            </div>
-
-            <div id="products-container" class="products-grid">
-                <!-- سيتم إضافة المنتجات هنا -->
-            </div>
-        </section>
-
-        <!-- لوحة المدير -->
-        <section id="admin-panel" class="hidden">
-            <div class="admin-header">
-                <h2><i class="fas fa-crown"></i> لوحة تحكم المدير</h2>
-                <div class="admin-stats">
-                    <div class="stat-card">
-                        <i class="fas fa-users"></i>
-                        <div>
-                            <h3 id="total-users">0</h3>
-                            <p>إجمالي المستخدمين</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-box"></i>
-                        <div>
-                            <h3 id="total-products">0</h3>
-                            <p>إجمالي المنتجات</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-check-circle"></i>
-                        <div>
-                            <h3 id="total-merchants">0</h3>
-                            <p>المصرح لهم بالنشر</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="admin-nav">
-                <button data-view="accounts-view" class="active">
-                    <i class="fas fa-users"></i> جميع الحسابات
-                </button>
-                <button data-view="merchants-view">
-                    <i class="fas fa-store"></i> المصرح لهم
-                </button>
-                <button data-view="products-view-admin">
-                    <i class="fas fa-box"></i> المنتجات
-                </button>
-                <button data-view="add-product-view">
-                    <i class="fas fa-plus-circle"></i> إضافة منتج
-                </button>
-            </div>
-            
-            <div id="admin-content-area">
-                <!-- عرض الحسابات -->
-                <div id="accounts-view" class="admin-sub-view">
-                    <div class="admin-sub-header">
-                        <h3><i class="fas fa-users"></i> جميع الحسابات</h3>
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-user" placeholder="بحث باسم أو بريد...">
-                        </div>
-                    </div>
-                    <div class="table-responsive">
+                    <div class="table-container">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>الاسم</th>
-                                    <th>البريد</th>
-                                    <th>حالة النشر</th>
+                                    <th>البريد الإلكتروني</th>
+                                    <th>تاريخ الإضافة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merchantsTable">
+                                <!-- سيتم إضافة البيانات عبر JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- تبويب الحسابات -->
+                <div class="tab-content" id="accounts">
+                    <h3>جميع الحسابات</h3>
+                    <div class="search-box">
+                        <input type="text" id="accountSearch" placeholder="البحث عن حساب بالبريد الإلكتروني...">
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>البريد الإلكتروني</th>
                                     <th>تاريخ التسجيل</th>
-                                    <th>إجراءات</th>
+                                    <th>الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody id="accounts-table-body">
-                                <!-- سيتم ملؤه بواسطة JavaScript -->
+                            <tbody id="accountsTable">
+                                <!-- سيتم إضافة البيانات عبر JavaScript -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- عرض المصرح لهم بالنشر -->
-                <div id="merchants-view" class="admin-sub-view hidden">
-                    <div class="admin-sub-header">
-                        <h3><i class="fas fa-store"></i> المصرح لهم بالنشر</h3>
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-merchant" placeholder="بحث باسم أو بريد...">
-                        </div>
+                
+                <!-- تبويب الإعلانات -->
+                <div class="tab-content" id="ads">
+                    <h3>الإعلانات المنشورة</h3>
+                    <div class="search-box">
+                        <input type="text" id="adSearch" placeholder="البحث عن إعلان...">
                     </div>
-                    <div class="table-responsive">
+                    <div class="table-container">
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>الاسم</th>
-                                    <th>البريد</th>
-                                    <th>عدد المنتجات</th>
-                                    <th>تاريخ التصريح</th>
-                                    <th>إجراءات</th>
+                                    <th>اسم المنتج</th>
+                                    <th>السعر</th>
+                                    <th>صاحب الإعلان</th>
+                                    <th>التاريخ</th>
+                                    <th>النوع</th>
+                                    <th>الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody id="merchants-table-body">
-                                <!-- سيتم ملؤه بواسطة JavaScript -->
+                            <tbody id="adsTable">
+                                <!-- سيتم إضافة البيانات عبر JavaScript -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- عرض المنتجات -->
-                <div id="products-view-admin" class="admin-sub-view hidden">
-                    <div class="admin-sub-header">
-                        <h3><i class="fas fa-box"></i> جميع المنتجات</h3>
-                        <div class="filter-buttons">
-                            <button class="btn btn-small active" data-filter="all">الكل</button>
-                            <button class="btn btn-small" data-filter="featured">المميزة</button>
-                            <button class="btn btn-small" data-filter="new">الجديدة</button>
-                        </div>
-                    </div>
-                    <div id="admin-products-container" class="products-grid">
-                        <!-- سيتم عرض المنتجات هنا -->
-                    </div>
-                </div>
-
-                <!-- إضافة منتج -->
-                <div id="add-product-view" class="admin-sub-view hidden">
-                    <h3><i class="fas fa-plus-circle"></i> إضافة منتج جديد</h3>
-                    <form id="admin-product-form" class="auth-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="admin-product-name">اسم المنتج *</label>
-                                <input type="text" id="admin-product-name" placeholder="اسم المنتج" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="admin-product-category">الفئة *</label>
-                                <select id="admin-product-category" required>
-                                    <option value="">اختر الفئة</option>
-                                    <option value="الكترونيات">الكترونيات</option>
-                                    <option value="موبايلات">موبايلات</option>
-                                    <option value="سيارات">سيارات</option>
-                                    <option value="عقارات">عقارات</option>
-                                    <option value="أثاث">أثاث</option>
-                                    <option value="ملابس">ملابس</option>
-                                    <option value="خدمات">خدمات</option>
-                                    <option value="أخرى">أخرى</option>
-                                </select>
-                            </div>
-                        </div>
-                        
+                
+                <!-- تبويب نشر إعلان -->
+                <div class="tab-content" id="newAd">
+                    <h3>نشر إعلان جديد</h3>
+                    <form id="adminAddProductForm">
                         <div class="form-group">
-                            <label for="admin-product-desc">وصف المنتج *</label>
-                            <textarea id="admin-product-desc" placeholder="وصف المنتج..." rows="4" required></textarea>
+                            <label for="adminProductType">نوع الإعلان</label>
+                            <select id="adminProductType">
+                                <option value="normal">إعلان عادي</option>
+                                <option value="featured">إعلان مميز</option>
+                            </select>
                         </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="admin-product-price">السعر (ريال عماني) *</label>
-                                <input type="number" id="admin-product-price" placeholder="السعر" min="0" step="0.5" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="admin-product-condition">الحالة *</label>
-                                <select id="admin-product-condition" required>
-                                    <option value="">اختر الحالة</option>
-                                    <option value="جديد">جديد</option>
-                                    <option value="مستعمل-جيد">مستعمل (جيد)</option>
-                                    <option value="مستعمل-متوسط">مستعمل (متوسط)</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="admin-product-location">المكان *</label>
-                                <select id="admin-product-location" required>
-                                    <option value="">اختر المحافظة</option>
-                                    <option value="مسقط">مسقط</option>
-                                    <option value="ظفار">ظفار</option>
-                                    <option value="الوسطى">الوسطى</option>
-                                    <option value="ظاهرة">ظاهرة</option>
-                                    <option value="الباطنة">الباطنة</option>
-                                    <option value="البريمي">البريمي</option>
-                                    <option value="الشرقية">الشرقية</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="admin-product-phone">رقم التواصل *</label>
-                                <div class="phone-input">
-                                    <span class="country-code">+968</span>
-                                    <input type="tel" id="admin-product-phone" placeholder="رقم الجوال" pattern="[0-9]{8}" required>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <div class="form-group">
-                            <label for="admin-product-images">صور المنتج</label>
-                            <div class="image-upload-area">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <p>انقر لرفع الصور أو اسحبها هنا</p>
-                                <input type="file" id="admin-product-images" multiple accept="image/*" hidden>
-                            </div>
-                            <div class="image-preview" id="admin-image-preview"></div>
+                            <label for="adminProductName">اسم المنتج</label>
+                            <input type="text" id="adminProductName" required>
                         </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="admin-product-featured">
-                                    <span>منتج مميز</span>
-                                </label>
-                            </div>
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="admin-product-negotiable">
-                                    <span>السعر قابل للتفاوض</span>
-                                </label>
-                            </div>
+                        <div class="form-group">
+                            <label for="adminProductPrice">السعر</label>
+                            <input type="number" id="adminProductPrice" required>
                         </div>
-                        
-                        <div class="form-buttons">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> نشر المنتج
-                            </button>
-                            <button type="reset" class="btn btn-outline">
-                                <i class="fas fa-redo"></i> مسح النموذج
-                            </button>
+                        <div class="form-group">
+                            <label for="adminProductContact">رقم التواصل</label>
+                            <input type="tel" id="adminProductContact" required>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </section>
-        
-        <!-- نموذج نشر منتج للمستخدمين -->
-        <div id="user-product-modal" class="modal-overlay hidden">
-            <div class="modal-content product-modal">
-                <div class="modal-header">
-                    <h3><i class="fas fa-plus-circle"></i> نشر منتج جديد</h3>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="user-product-form">
-                        <!-- سيتم ملؤه بواسطة JavaScript -->
+                        <div class="form-group">
+                            <label for="adminProductDescription">وصف المنتج</label>
+                            <textarea id="adminProductDescription" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminProductImage">صورة المنتج</label>
+                            <input type="file" id="adminProductImage" accept="image/*">
+                            <div class="image-preview" id="adminImagePreview"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">نشر الإعلان</button>
                     </form>
                 </div>
             </div>
         </div>
-        
-        <!-- نافذة تفاصيل المنتج -->
-        <div id="product-details-modal" class="modal-overlay hidden">
-            <div class="modal-content details-modal">
-                <!-- سيتم ملؤه بواسطة JavaScript -->
-            </div>
-        </div>
-        
-        <!-- نافذة التواصل مع الإدارة للنشر -->
-        <div id="contact-admin-modal" class="modal-overlay hidden">
-            <div class="modal-content contact-modal">
-                <div class="modal-header">
-                    <h3><i class="fas fa-info-circle"></i> مطلوب تصريح للنشر</h3>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="contact-instructions">
-                        <div class="contact-icon">
-                            <i class="fab fa-instagram" style="font-size: 4rem; color: #E1306C;"></i>
-                        </div>
-                        <h4>لنشر منتجاتك تحتاج إلى تصريح من الإدارة</h4>
-                        <p>يرجى التواصل معنا عبر حساب Instagram للحصول على تصريح النشر:</p>
-                        <div class="contact-link">
-                            <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" 
-                               target="_blank" class="btn btn-instagram">
-                                <i class="fab fa-instagram"></i> تواصل معنا على Instagram
-                            </a>
-                        </div>
-                        <p class="contact-note">بعد التواصل وموافقة الإدارة، ستتمكن من نشر منتجاتك على المنصة</p>
-                        <div class="user-info">
-                            <p><strong>اسم المستخدم:</strong> ${currentUser?.name || ''}</p>
-                            <p><strong>البريد الإلكتروني:</strong> ${currentUser?.email || ''}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- فوتر عماني -->
-    <footer class="omani-footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4><i class="fas fa-store"></i> WebAidea عُمان</h4>
-                    <p>منصة البيع والشراء الأولى في سلطنة عُمان</p>
-                    <div class="social-links">
-                        <a href="https://wa.me/96895873061" target="_blank"><i class="fab fa-whatsapp"></i></a>
-                        <a href="https://www.instagram.com/webaidea?igsh=ajVyNm0yZHdlMnNi&utm_source=qr" target="_blank">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>روابط سريعة</h4>
-                    <ul>
-                        <li><a href="#" class="home-link"><i class="fas fa-home"></i> الرئيسية</a></li>
-                        <li><a href="#" class="all-products-link"><i class="fas fa-box"></i> جميع المنتجات</a></li>
-                        <li><a href="#" class="publish-product-link"><i class="fas fa-plus-circle"></i> نشر منتج</a></li>
-                        <li><a href="#" class="contact-link"><i class="fas fa-question-circle"></i> المساعدة</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>الدعم</h4>
-                    <ul>
-                        <li><i class="fas fa-phone"></i> +968 95873061</li>
-                        <li><i class="fas fa-clock"></i> من 8 صباحاً إلى 8 مساءً</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>جميع الحقوق محفوظة &copy; 2024 WebAidea عُمان</p>
-                <div class="footer-links">
-                    <a href="#">الشروط والأحكام</a> | 
-                    <a href="#">اتصل بنا</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- ازرار عائمة للجوال -->
-    <div class="floating-buttons">
-        <button class="floating-btn btn-primary" id="float-add-product">
-            <i class="fas fa-plus"></i>
-            <span>نشر منتج</span>
-        </button>
-        <a href="https://wa.me/96895873061" target="_blank" class="floating-btn btn-whatsapp">
-            <i class="fab fa-whatsapp"></i>
-        </a>
     </div>
-    <!-- في index.html، أضف زر الاختبار في الفوتر -->
-<button onclick="testRegistration()" style="margin-top: 20px; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px;">
-    اختبار التسجيل
-</button>
+
+    <!-- رسائل التنبيه -->
+    <div class="notification" id="notification">
+        <div class="notification-content">
+            <span id="notificationMessage"></span>
+            <button class="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-auth.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-firestore.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.0/firebase-storage.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
