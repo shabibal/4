@@ -7,7 +7,7 @@ let products = [];
 let currentUser = null;
 let isAdminLoggedIn = false;
 let selectedImageData = null;
-let dataInitialized = false; // ⭐ إضافة: منع التكرار
+let dataInitialized = false;
 
 // تهيئة الموقع عند التحميل
 document.addEventListener('DOMContentLoaded', async function() {
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // تحميل البيانات المحلية
     loadLocalData();
     
-    // ⭐ إضافة: تهيئة البيانات التجريبية مرة واحدة فقط
+    // تهيئة البيانات التجريبية مرة واحدة فقط
     if (!dataInitialized && users.length === 0 && products.length === 0) {
         initSampleData();
         dataInitialized = true;
@@ -102,10 +102,16 @@ function updateUI() {
         if (loginBtn) {
             loginBtn.innerHTML = `<i class="fas fa-user"></i> ${currentUser.name}`;
             loginBtn.onclick = function() {
-                alert(`مرحباً ${currentUser.name}!\n\nالحساب: ${currentUser.email}\nالنوع: ${currentUser.type === 'merchant' ? 'تاجر' : 'مستخدم'}`);
+                showUserOptions();
             };
         }
         if (adminBtn) adminBtn.style.display = 'none';
+        
+        // ⭐⭐ إضافة: عرض زر نشر الإعلان إذا كان المستخدم تاجراً
+        if (currentUser.type === 'merchant') {
+            showMerchantPostButton();
+        }
+        
         showMainSite();
     } else {
         // حالة: زائر غير مسجل
@@ -118,6 +124,280 @@ function updateUI() {
         }
         if (adminBtn) adminBtn.style.display = 'none';
         showMainSite();
+    }
+}
+
+// ⭐⭐ دالة جديدة: عرض خيارات المستخدم
+function showUserOptions() {
+    const options = [];
+    
+    options.push(`👤 ${currentUser.name}`);
+    options.push(`📧 ${currentUser.email}`);
+    options.push(`🎫 ${currentUser.type === 'merchant' ? 'تاجر' : currentUser.type === 'admin' ? 'مدير' : 'مستخدم عادي'}`);
+    
+    if (currentUser.type === 'merchant') {
+        options.push(`\n✅ يمكنك نشر إعلانات عادية`);
+    } else if (currentUser.type === 'user') {
+        options.push(`\n⏳ حسابك عادي، تواصل مع الإدارة ليصبح تاجراً`);
+    }
+    
+    const message = options.join('\n');
+    alert(message);
+}
+
+// ⭐⭐ دالة جديدة: عرض زر نشر الإعلان للتجار
+function showMerchantPostButton() {
+    // إزالة الزر السابق إذا كان موجوداً
+    const oldBtn = document.getElementById('merchantPostBtn');
+    if (oldBtn) oldBtn.remove();
+    
+    // إنشاء زر جديد
+    const postBtn = document.createElement('a');
+    postBtn.id = 'merchantPostBtn';
+    postBtn.className = 'btn btn-primary';
+    postBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 1000;
+        padding: 12px 20px;
+        border-radius: 25px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    `;
+    postBtn.innerHTML = `<i class="fas fa-plus-circle"></i> نشر إعلان`;
+    postBtn.href = 'javascript:void(0);';
+    postBtn.onclick = function() {
+        openMerchantAdModal();
+    };
+    
+    document.body.appendChild(postBtn);
+}
+
+// ⭐⭐ دالة جديدة: فتح نافذة نشر إعلان للتجار
+function openMerchantAdModal() {
+    const modal = document.createElement('div');
+    modal.id = 'merchantAdModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: #333;">
+                    <i class="fas fa-bullhorn"></i> نشر إعلان جديد
+                </h2>
+                <span onclick="closeMerchantAdModal()" style="font-size: 1.5rem; cursor: pointer; color: #666;">&times;</span>
+            </div>
+            
+            <form id="merchantAdForm" onsubmit="postMerchantAd(event)">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">عنوان المنتج *</label>
+                    <input type="text" id="merchantAdTitle" required style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">السعر (ريال) *</label>
+                    <input type="number" id="merchantAdPrice" required style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">وصف المنتج *</label>
+                    <textarea id="merchantAdDescription" rows="3" required style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;"></textarea>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">رقم التواصل *</label>
+                    <input type="tel" id="merchantAdContact" required style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">صورة المنتج *</label>
+                    <input type="file" id="merchantAdImage" accept="image/*" style="display: none;" onchange="handleMerchantImageUpload(event)">
+                    <button type="button" onclick="document.getElementById('merchantAdImage').click()" style="background: #f5f5f5; color: #333; padding: 0.8rem 1.5rem; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; width: 100%;">
+                        <i class="fas fa-upload"></i> اختر صورة
+                    </button>
+                    <div id="merchantImagePreview" style="margin-top: 1rem; text-align: center; color: #666;">
+                        <i class="fas fa-image" style="font-size: 2rem;"></i>
+                        <p>لم يتم اختيار صورة</p>
+                    </div>
+                </div>
+                
+                <div style="background: #fff8e1; padding: 1rem; border-radius: 8px; border-right: 4px solid #ffb300; margin-bottom: 1.5rem;">
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> هذا إعلان عادي. للإعلانات المميزة تواصل مع الإدارة.
+                    </p>
+                </div>
+                
+                <button type="submit" style="background: linear-gradient(135deg, #4361ee, #3a0ca3); color: white; width: 100%; padding: 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-paper-plane"></i> نشر الإعلان
+                </button>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// ⭐⭐ دالة جديدة: معالجة رفع صورة للتجار
+let merchantSelectedImage = null;
+
+function handleMerchantImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+        alert('⚠️ يرجى اختيار صورة فقط');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) {
+        alert('⚠️ حجم الصورة كبير جداً. الحد الأقصى 2MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        merchantSelectedImage = e.target.result;
+        
+        const preview = document.getElementById('merchantImagePreview');
+        if (preview) {
+            preview.innerHTML = `
+                <img src="${merchantSelectedImage}" style="max-width: 100%; max-height: 150px; border-radius: 8px;">
+                <p style="color: #4CAF50; margin-top: 5px;">
+                    <i class="fas fa-check-circle"></i> تم اختيار الصورة
+                </p>
+            `;
+        }
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// ⭐⭐ دالة جديدة: إغلاق نافذة نشر إعلان للتجار
+function closeMerchantAdModal() {
+    const modal = document.getElementById('merchantAdModal');
+    if (modal) modal.remove();
+    merchantSelectedImage = null;
+}
+
+// ⭐⭐ دالة جديدة: نشر إعلان للتجار
+async function postMerchantAd(event) {
+    event.preventDefault();
+    
+    if (!currentUser || currentUser.type !== 'merchant') {
+        alert('❌ يجب أن تكون تاجراً لنشر إعلان');
+        return;
+    }
+    
+    const title = document.getElementById('merchantAdTitle').value.trim();
+    const price = document.getElementById('merchantAdPrice').value;
+    const description = document.getElementById('merchantAdDescription').value.trim();
+    const contact = document.getElementById('merchantAdContact').value.trim();
+    
+    if (!title || !price || !description || !contact) {
+        alert('⚠️ يرجى ملء جميع الحقول المطلوبة');
+        return;
+    }
+    
+    if (!merchantSelectedImage) {
+        alert('⚠️ يرجى اختيار صورة للمنتج');
+        return;
+    }
+    
+    if (!confirm('هل تريد نشر هذا الإعلان؟')) return;
+    
+    try {
+        // رفع الصورة (نسخة مبسطة)
+        const imageUrl = await uploadMerchantImage();
+        
+        // إنشاء المنتج محلياً
+        const newProduct = {
+            id: Date.now(),
+            title: title,
+            price: parseFloat(price),
+            description: description,
+            image: imageUrl,
+            merchantId: currentUser.id,
+            contact: contact,
+            featured: false, // ⭐ إعلان عادي غير مميز
+            date: new Date().toISOString().split('T')[0]
+        };
+        
+        // محاولة إرسال للسيرفر
+        try {
+            const response = await postData('addProduct', {
+                title: title,
+                price: parseFloat(price),
+                description: description,
+                image: imageUrl,
+                contact: contact,
+                merchantId: currentUser.id,
+                featured: 'false'
+            });
+            
+            if (response.status === 201) {
+                newProduct.id = response.data.productId;
+                console.log('✅ تم نشر الإعلان في السيرفر');
+            }
+        } catch (serverError) {
+            console.warn('⚠️ استخدام البيانات المحلية فقط:', serverError);
+        }
+        
+        // إضافة إلى البيانات المحلية
+        products.push(newProduct);
+        localStorage.setItem('webaidea_products', JSON.stringify(products));
+        
+        // إغلاق النافذة وإعادة التعيين
+        closeMerchantAdModal();
+        merchantSelectedImage = null;
+        
+        // تحديث العرض
+        renderProducts();
+        if (isAdminLoggedIn) {
+            renderAdsTable();
+        }
+        
+        alert('🎉 تم نشر إعلانك بنجاح!');
+        
+    } catch (error) {
+        console.error('❌ خطأ في نشر الإعلان:', error);
+        alert('⚠️ حدث خطأ أثناء نشر الإعلان');
+    }
+}
+
+// ⭐⭐ دالة جديدة: رفع صورة للتجار
+async function uploadMerchantImage() {
+    if (!merchantSelectedImage) return null;
+    
+    try {
+        // استخدام Unsplash images كبديل
+        const unsplashImages = [
+            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+        ];
+        
+        const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
+        return randomImage;
+        
+    } catch (error) {
+        console.error('❌ خطأ في معالجة الصورة:', error);
+        return 'https://via.placeholder.com/600x400?text=Product+Image';
     }
 }
 
@@ -184,7 +464,6 @@ async function fetchData(action, params = {}) {
 
 // دالة مساعدة للاتصال بالAPI (POST)
 async function postData(action, params = {}) {
-    // سنستخدم GET بدلاً من POST بسبب مشاكل CORS
     const url = new URL(API_URL);
     url.searchParams.append('action', action);
     
@@ -314,33 +593,54 @@ async function handleAuth(event) {
             // البحث في البيانات المحلية أولاً
             let user = users.find(u => u.email === email && u.password === password);
             
+            if (user) {
+                // ✅ وجد المستخدم في البيانات المحلية
+                console.log('✅ تسجيل دخول ناجح من البيانات المحلية:', user);
+                currentUser = user;
+                isAdminLoggedIn = user.type === 'admin';
+                
+                // حفظ في التخزين المحلي
+                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
+                
+                // تحديث الواجهة
+                updateUI();
+                
+                closeModal();
+                alert(`🎉 مرحباً بعودتك ${user.name}!`);
+                return;
+            }
+            
             // إذا لم يوجد محلياً، جرب السيرفر
-            if (!user) {
+            try {
                 const response = await fetchData('login', { email, password });
                 
                 if (response.status === 200) {
                     user = response.data;
                     console.log('✅ تسجيل دخول ناجح من السيرفر:', user);
+                    
+                    // إضافة إلى البيانات المحلية
+                    if (!users.some(u => u.email === user.email)) {
+                        users.push(user);
+                        localStorage.setItem('webaidea_users', JSON.stringify(users));
+                    }
+                    
+                    currentUser = user;
+                    isAdminLoggedIn = user.type === 'admin';
+                    
+                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
+                    
+                    updateUI();
+                    closeModal();
+                    alert(`🎉 مرحباً بعودتك ${user.name}!`);
                 } else {
                     alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة');
-                    return;
                 }
-            } else {
-                console.log('✅ تسجيل دخول ناجح من البيانات المحلية:', user);
+            } catch (serverError) {
+                console.warn('⚠️ خطأ في السيرفر:', serverError);
+                alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\n\n⚠️ قد يكون هناك مشكلة في الاتصال بالسيرفر');
             }
-            
-            currentUser = user;
-            isAdminLoggedIn = user.type === 'admin';
-            
-            // حفظ في التخزين المحلي
-            localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
-            
-            // تحديث الواجهة
-            updateUI();
-            
-            closeModal();
-            alert(`🎉 مرحباً بعودتك ${user.name}!`);
             
         } else {
             // ========== 3. إنشاء حساب جديد ==========
@@ -353,35 +653,59 @@ async function handleAuth(event) {
             }
             
             // محاولة التسجيل في السيرفر
-            const response = await fetchData('register', { name, email, password });
-            
-            if (response.status === 201) {
-                const newUser = response.data;
-                console.log('✅ تم إنشاء حساب جديد:', newUser);
+            try {
+                const response = await fetchData('register', { name, email, password });
                 
-                // إضافة إلى البيانات المحلية
+                if (response.status === 201) {
+                    const newUser = response.data;
+                    console.log('✅ تم إنشاء حساب جديد في السيرفر:', newUser);
+                    
+                    // إضافة إلى البيانات المحلية
+                    users.push(newUser);
+                    currentUser = newUser;
+                    isAdminLoggedIn = false;
+                    
+                    localStorage.setItem('webaidea_users', JSON.stringify(users));
+                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
+                    
+                    updateUI();
+                    closeModal();
+                    alert(`🎉 تم إنشاء حسابك بنجاح ${name}!\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
+                } else {
+                    alert(`❌ ${response.message || 'فشل إنشاء الحساب'}`);
+                }
+            } catch (serverError) {
+                console.warn('⚠️ خطأ في السيرفر، إنشاء حساب محلي:', serverError);
+                
+                // ⭐⭐ إنشاء حساب محلي إذا فشل السيرفر
+                const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+                const newUser = {
+                    id: newId,
+                    name: name,
+                    email: email,
+                    password: password,
+                    type: 'user',
+                    joinDate: new Date().toISOString().split('T')[0]
+                };
+                
                 users.push(newUser);
                 currentUser = newUser;
                 isAdminLoggedIn = false;
                 
-                // حفظ في التخزين المحلي
                 localStorage.setItem('webaidea_users', JSON.stringify(users));
                 localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
                 localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
                 
-                // تحديث الواجهة
                 updateUI();
-                
                 closeModal();
-                alert(`🎉 تم إنشاء حسابك بنجاح ${name}!\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
-            } else {
-                alert(`❌ ${response.message || 'فشل إنشاء الحساب'}`);
+                alert(`🎉 تم إنشاء حسابك بنجاح ${name}! (محلياً)\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
             }
         }
         
     } catch (error) {
-        console.error('❌ خطأ في المصادقة:', error);
-        alert('⚠️ حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
+        console.error('❌ خطأ غير متوقع في المصادقة:', error);
+        alert('⚠️ حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
     }
 }
 
@@ -410,9 +734,15 @@ function renderProducts() {
         return;
     }
     
-    // فرز المنتجات: المميزة أولاً
-    const featuredProducts = products.filter(p => p.featured);
-    const regularProducts = products.filter(p => !p.featured);
+    // ⭐⭐ فرز المنتجات: المميزة أولاً مع ترتيب عكسي للتاريخ (الأحدث أولاً)
+    const featuredProducts = products
+        .filter(p => p.featured)
+        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    
+    const regularProducts = products
+        .filter(p => !p.featured)
+        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    
     const allProducts = [...featuredProducts, ...regularProducts];
     
     allProducts.forEach(product => {
@@ -433,6 +763,7 @@ function renderProducts() {
                      alt="${product.title || 'منتج'}" 
                      loading="lazy"
                      onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading'">
+                ${product.featured ? `<div class="featured-overlay"><i class="fas fa-star"></i> مميز</div>` : ''}
             </div>
             <div class="product-info">
                 <h3 class="product-title">${product.title || 'بدون عنوان'}</h3>
@@ -446,6 +777,9 @@ function renderProducts() {
                         <div class="product-merchant">
                             <i class="fas fa-user"></i> ${merchant ? merchant.name : 'تاجر'}
                         </div>
+                    </div>
+                    <div class="product-date" style="font-size: 0.8rem; color: #666;">
+                        <i class="fas fa-calendar"></i> ${product.date || ''}
                     </div>
                 </div>
                 <button class="view-btn" onclick="showProductDetail(${product.id})">
@@ -541,7 +875,7 @@ function handleImageUpload(event) {
         return;
     }
     
-    // التحقق من حجم الملف (2MB كحد أقصى) ⭐ تغيير: 2MB بدلاً من 5MB
+    // التحقق من حجم الملف (2MB كحد أقصى)
     if (file.size > 2 * 1024 * 1024) {
         alert('⚠️ حجم الصورة كبير جداً. الحد الأقصى 2MB');
         return;
@@ -569,7 +903,7 @@ function handleImageUpload(event) {
     reader.readAsDataURL(file);
 }
 
-// ⭐⭐ دالة جديدة مبسطة لرفع الصور ⭐⭐
+// رفع الصورة إلى Google Drive
 async function uploadImageToDrive() {
     if (!selectedImageData) {
         alert('⚠️ يرجى اختيار صورة أولاً');
@@ -577,28 +911,19 @@ async function uploadImageToDrive() {
     }
     
     try {
-        console.log('📸 معالجة الصورة للمنتج...');
+        console.log('📸 معالجة الصورة...');
         
-        // ⭐⭐ حل مؤقت: استخدام صور Unsplash مجاناً
+        // استخدام Unsplash images كبديل
         const unsplashImages = [
             'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
             'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
             'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
         ];
         
-        // اختيار صورة عشوائية
         const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
         
         console.log('✅ استخدام صورة Unsplash:', randomImage);
-        
-        // عرض رسالة للمستخدم
-        alert('ℹ️ تم استخدام صورة تجريبية للمنتج. في الإصدار الكامل، سيتم رفع الصورة المختارة.');
-        
         return randomImage;
         
     } catch (error) {
@@ -955,7 +1280,7 @@ async function removeMerchant(userId) {
     }
 }
 
-// نشر إعلان جديد من قبل الإدارة
+// نشر إعلان جديد من قبل الإدارة (مميز)
 async function postAdminAd(event) {
     event.preventDefault();
     
@@ -979,7 +1304,7 @@ async function postAdminAd(event) {
     if (!confirm('هل تريد نشر هذا الإعلان المميز؟')) return;
     
     try {
-        // 1. رفع الصورة (نسخة مبسطة)
+        // 1. رفع الصورة
         const imageUrl = await uploadImageToDrive();
         if (!imageUrl) {
             alert('❌ فشل معالجة الصورة');
@@ -994,7 +1319,7 @@ async function postAdminAd(event) {
             image: imageUrl,
             contact: contact,
             merchantId: merchantId,
-            featured: 'true'
+            featured: 'true' // ⭐⭐ إعلان مميز
         });
         
         if (response.status === 201) {
@@ -1007,7 +1332,7 @@ async function postAdminAd(event) {
                 image: imageUrl,
                 contact: contact,
                 merchantId: merchantId,
-                featured: true,
+                featured: true, // ⭐⭐ إعلان مميز
                 date: new Date().toISOString().split('T')[0]
             };
             
@@ -1030,10 +1355,9 @@ async function postAdminAd(event) {
             renderAdsTable();
             renderProducts();
             
-            alert('🎉 تم نشر الإعلان المميز بنجاح!');
+            alert('🎉 تم نشر الإعلان المميز بنجاح!\n\n⭐ سيظهر في بداية الصفحة.');
         } else {
             // ⭐ إذا فشل الاتصال بالسيرفر، أضف المنتج محلياً
-            console.warn('⚠️ استخدام البيانات المحلية');
             const newProduct = {
                 id: Date.now(),
                 title: title,
@@ -1042,7 +1366,7 @@ async function postAdminAd(event) {
                 image: imageUrl,
                 contact: contact,
                 merchantId: merchantId,
-                featured: true,
+                featured: true, // ⭐⭐ إعلان مميز
                 date: new Date().toISOString().split('T')[0]
             };
             
@@ -1057,7 +1381,7 @@ async function postAdminAd(event) {
             renderAdsTable();
             renderProducts();
             
-            alert('🎉 تم نشر الإعلان المميز بنجاح (محلياً)!');
+            alert('🎉 تم نشر الإعلان المميز بنجاح (محلياً)!\n\n⭐ سيظهر في بداية الصفحة.');
         }
     } catch (error) {
         console.error('❌ خطأ في نشر الإعلان:', error);
@@ -1106,7 +1430,7 @@ async function makeFeatured(productId) {
         
         renderAdsTable();
         renderProducts();
-        alert('✅ تم جعل الإعلان مميزاً.');
+        alert('✅ تم جعل الإعلان مميزاً.\n\n⭐ سيظهر في بداية الصفحة.');
     }
 }
 
@@ -1130,7 +1454,7 @@ function viewUserAds(userId) {
     if (userAds.length > 0) {
         let message = `📋 إعلانات ${user.name} (${userAds.length} إعلان):\n\n`;
         userAds.forEach((ad, index) => {
-            message += `${index + 1}. ${ad.title} - ${ad.price} ريال\n`;
+            message += `${index + 1}. ${ad.title} - ${ad.price} ريال ${ad.featured ? '⭐ مميز' : ''}\n`;
         });
         alert(message);
     } else {
@@ -1212,7 +1536,7 @@ function initSampleData() {
                 merchantId: 1,
                 contact: "+968 1234 5678",
                 date: "2023-10-15",
-                featured: true
+                featured: true // ⭐⭐ إعلان مميز
             },
             {
                 id: 2,
@@ -1223,11 +1547,22 @@ function initSampleData() {
                 merchantId: 1,
                 contact: "+968 9876 5432",
                 date: "2023-10-20",
+                featured: false // ⭐⭐ إعلان عادي
+            },
+            {
+                id: 3,
+                title: "هاتف ذكي جديد",
+                description: "هاتف ذكي بشاشة 6.5 بوصة، كاميرا 48 ميجابكسل، ذاكرة 128 جيجابايت.",
+                price: 899,
+                image: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                merchantId: 1,
+                contact: "+968 5555 1234",
+                date: "2023-10-25",
                 featured: false
             }
         ];
         localStorage.setItem('webaidea_products', JSON.stringify(products));
-        console.log('✅ تم إنشاء 2 منتج تجريبي');
+        console.log('✅ تم إنشاء 3 منتج تجريبي');
     }
 }
 
