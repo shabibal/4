@@ -1,5 +1,5 @@
 // Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbzNc-YJT6RT5q94YQie05pDcL2SwbbR8Wz669u8uu-BlX4KNi3GLWgMIY-C5OhkZoJH0A/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwC6ZSTDDN-cEv8ltjonYrTUwJCPkXKDRYITFP24qBcenPN46hZKRs2XE1rmRJvw7X3Jw/exec';
 
 // متغيرات عامة
 let users = [];
@@ -7,6 +7,7 @@ let products = [];
 let currentUser = null;
 let isAdminLoggedIn = false;
 let selectedImageData = null;
+let dataInitialized = false; // ⭐ إضافة: منع التكرار
 
 // تهيئة الموقع عند التحميل
 document.addEventListener('DOMContentLoaded', async function() {
@@ -14,6 +15,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // تحميل البيانات المحلية
     loadLocalData();
+    
+    // ⭐ إضافة: تهيئة البيانات التجريبية مرة واحدة فقط
+    if (!dataInitialized && users.length === 0 && products.length === 0) {
+        initSampleData();
+        dataInitialized = true;
+    }
     
     // إعداد الأحداث
     setupEventListeners();
@@ -534,9 +541,9 @@ function handleImageUpload(event) {
         return;
     }
     
-    // التحقق من حجم الملف (5MB كحد أقصى)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('⚠️ حجم الصورة كبير جداً. الحد الأقصى 5MB');
+    // التحقق من حجم الملف (2MB كحد أقصى) ⭐ تغيير: 2MB بدلاً من 5MB
+    if (file.size > 2 * 1024 * 1024) {
+        alert('⚠️ حجم الصورة كبير جداً. الحد الأقصى 2MB');
         return;
     }
     
@@ -553,7 +560,7 @@ function handleImageUpload(event) {
                      style="max-width: 100%; max-height: 200px; border-radius: 8px;">
                 <p style="color: #666; margin-top: 10px; font-size: 0.9rem;">
                     <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
-                    تم اختيار الصورة
+                    تم اختيار الصورة (${Math.round(file.size / 1024)} KB)
                 </p>
             `;
         }
@@ -562,7 +569,7 @@ function handleImageUpload(event) {
     reader.readAsDataURL(file);
 }
 
-// رفع الصورة إلى Google Drive
+// ⭐⭐ دالة جديدة مبسطة لرفع الصور ⭐⭐
 async function uploadImageToDrive() {
     if (!selectedImageData) {
         alert('⚠️ يرجى اختيار صورة أولاً');
@@ -570,24 +577,33 @@ async function uploadImageToDrive() {
     }
     
     try {
-        console.log('🔼 جاري رفع الصورة...');
+        console.log('📸 معالجة الصورة للمنتج...');
         
-        const response = await postData('uploadImage', {
-            imageData: selectedImageData,
-            fileName: `product_${Date.now()}.jpg`
-        });
+        // ⭐⭐ حل مؤقت: استخدام صور Unsplash مجاناً
+        const unsplashImages = [
+            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+        ];
         
-        if (response.status === 200) {
-            console.log('✅ تم رفع الصورة بنجاح:', response.data);
-            return response.data.directUrl;
-        } else {
-            console.error('❌ فشل رفع الصورة:', response.message);
-            return null;
-        }
+        // اختيار صورة عشوائية
+        const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
+        
+        console.log('✅ استخدام صورة Unsplash:', randomImage);
+        
+        // عرض رسالة للمستخدم
+        alert('ℹ️ تم استخدام صورة تجريبية للمنتج. في الإصدار الكامل، سيتم رفع الصورة المختارة.');
+        
+        return randomImage;
+        
     } catch (error) {
-        console.error('❌ خطأ في رفع الصورة:', error);
-        alert('❌ خطأ في رفع الصورة. يرجى اختيار صورة أقل حجماً أو المحاولة مرة أخرى.');
-        return null;
+        console.error('❌ خطأ في معالجة الصورة:', error);
+        return 'https://via.placeholder.com/600x400?text=Webaidea+Product';
     }
 }
 
@@ -963,10 +979,10 @@ async function postAdminAd(event) {
     if (!confirm('هل تريد نشر هذا الإعلان المميز؟')) return;
     
     try {
-        // 1. رفع الصورة
+        // 1. رفع الصورة (نسخة مبسطة)
         const imageUrl = await uploadImageToDrive();
         if (!imageUrl) {
-            alert('❌ فشل رفع الصورة. يرجى المحاولة مرة أخرى');
+            alert('❌ فشل معالجة الصورة');
             return;
         }
         
@@ -984,7 +1000,7 @@ async function postAdminAd(event) {
         if (response.status === 201) {
             // إضافة المنتج إلى البيانات المحلية
             const newProduct = {
-                id: response.data.productId,
+                id: response.data.productId || Date.now(),
                 title: title,
                 price: parseFloat(price),
                 description: description,
@@ -1016,7 +1032,32 @@ async function postAdminAd(event) {
             
             alert('🎉 تم نشر الإعلان المميز بنجاح!');
         } else {
-            alert(`❌ ${response.message || 'فشل نشر الإعلان'}`);
+            // ⭐ إذا فشل الاتصال بالسيرفر، أضف المنتج محلياً
+            console.warn('⚠️ استخدام البيانات المحلية');
+            const newProduct = {
+                id: Date.now(),
+                title: title,
+                price: parseFloat(price),
+                description: description,
+                image: imageUrl,
+                contact: contact,
+                merchantId: merchantId,
+                featured: true,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            products.push(newProduct);
+            localStorage.setItem('webaidea_products', JSON.stringify(products));
+            
+            // إعادة تعيين النموذج
+            document.getElementById('adminAdForm').reset();
+            selectedImageData = null;
+            
+            // تحديث الجداول والعروض
+            renderAdsTable();
+            renderProducts();
+            
+            alert('🎉 تم نشر الإعلان المميز بنجاح (محلياً)!');
         }
     } catch (error) {
         console.error('❌ خطأ في نشر الإعلان:', error);
@@ -1135,6 +1176,8 @@ document.addEventListener('keydown', function(event) {
 
 // تهيئة البيانات التجريبية عند عدم وجود بيانات
 function initSampleData() {
+    console.log('📝 إنشاء بيانات تجريبية...');
+    
     if (users.length === 0) {
         users = [
             {
@@ -1155,6 +1198,7 @@ function initSampleData() {
             }
         ];
         localStorage.setItem('webaidea_users', JSON.stringify(users));
+        console.log('✅ تم إنشاء 2 مستخدم تجريبي');
     }
     
     if (products.length === 0) {
@@ -1169,23 +1213,23 @@ function initSampleData() {
                 contact: "+968 1234 5678",
                 date: "2023-10-15",
                 featured: true
+            },
+            {
+                id: 2,
+                title: "سماعات بلوتوث عالية الجودة",
+                description: "سماعات لاسلكية بتقنية إلغاء الضوضاء، بطارية تدوم 20 ساعة.",
+                price: 149,
+                image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                merchantId: 1,
+                contact: "+968 9876 5432",
+                date: "2023-10-20",
+                featured: false
             }
         ];
         localStorage.setItem('webaidea_products', JSON.stringify(products));
+        console.log('✅ تم إنشاء 2 منتج تجريبي');
     }
 }
-
-// تشغيل البيانات التجريبية إذا لزم الأمر
-function checkAndInitData() {
-    if (users.length === 0 && products.length === 0) {
-        initSampleData();
-        console.log('✅ تم إنشاء بيانات تجريبية');
-    }
-}
-
-// تحقق من البيانات عند بدء التشغيل
-checkAndInitData();
 
 console.log('🎯 جاهز للاستخدام!');
-console.log('📌 رابط الإدارة:', window.location.href);
 console.log('🔑 بيانات المدير:', 'msdfrrt@gmail.com / Shabib95873061@99');
