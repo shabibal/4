@@ -147,6 +147,22 @@ body::before {
     background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
 }
 
+.login-btn {
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary-color) !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 50px;
+    border: 1px solid rgba(67, 97, 238, 0.2);
+    transition: var(--transition);
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+}
+
+.login-btn:hover {
+    background: var(--primary-color);
+    color: white !important;
+    transform: translateY(-2px);
+}
+
 .admin-login-trigger {
     background: var(--light-color);
     border-radius: 50%;
@@ -420,6 +436,8 @@ body::before {
     border: 1px solid rgba(67, 97, 238, 0.2);
     font-size: clamp(0.85rem, 1.5vw, 0.95rem);
     width: 100%;
+    cursor: pointer;
+    border: none;
 }
 
 .view-btn:hover {
@@ -576,6 +594,38 @@ body::before {
     margin-top: 2rem;
 }
 
+/* زر الرجوع في لوحة الإدارة */
+.btn-back {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-back:hover {
+    background: linear-gradient(135deg, #495057, #343a40);
+    transform: translateX(5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.btn-back i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-back:hover i {
+    transform: translateX(-3px);
+}
+
 /* لوحة الإدارة - تصميم متجاوب */
 .admin-panel {
     display: none;
@@ -588,21 +638,23 @@ body::before {
     min-height: 80vh;
 }
 
+/* تحسين تنسيق رأس الإدارة */
 .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: clamp(1rem, 2vw, 1.5rem);
     background: linear-gradient(135deg, var(--dark-color), #111);
     color: white;
-    padding: clamp(1rem, 2vw, 1.5rem);
-    display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 1rem;
 }
 
-@media (min-width: 768px) {
-    .admin-header {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
+.admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .admin-header h2 {
@@ -610,6 +662,7 @@ body::before {
     align-items: center;
     gap: 10px;
     font-size: clamp(1.2rem, 3vw, 1.5rem);
+    margin: 0;
 }
 
 .btn-logout {
@@ -1148,7 +1201,7 @@ tr:hover {
     margin-top: 1rem;
 }
 
-/* تصميم متجاوب للشاشات الصغيرة */
+/* تحسينات للشاشات الصغيرة */
 @media (max-width: 768px) {
     .nav-links {
         display: none;
@@ -1197,12 +1250,18 @@ tr:hover {
     
     .admin-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        text-align: center;
+        gap: 1rem;
     }
     
-    .btn-logout {
-        align-self: stretch;
-        text-align: center;
+    .admin-header-left {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-back, .btn-logout {
+        width: 100%;
         justify-content: center;
         margin-top: 0.5rem;
     }
@@ -1253,7 +1312,7 @@ tr:hover {
         font-size: 1.3rem;
     }
     
-    .btn-contact {
+    .btn-contact, .login-btn {
         padding: 0.5rem 1rem !important;
         font-size: 0.8rem;
     }
@@ -1261,6 +1320,15 @@ tr:hover {
     .action-btn {
         padding: 0.25rem 0.5rem;
         font-size: 0.7rem;
+    }
+    
+    .btn-back {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .admin-header h2 {
+        font-size: 1.1rem;
     }
 }
 
@@ -1343,7 +1411,7 @@ tr:hover {
 
 /* تحسينات للطباعة */
 @media print {
-    .navbar, .footer, .btn-contact, .action-btn, .menu-toggle, .admin-login-trigger {
+    .navbar, .footer, .btn-contact, .action-btn, .menu-toggle, .admin-login-trigger, .btn-back, .btn-logout {
         display: none !important;
     }
     

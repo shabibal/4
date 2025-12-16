@@ -64,8 +64,15 @@
     <!-- نافذة الإدارة (ستظهر فقط للمدير) -->
     <div id="adminPanel" class="admin-panel" style="display: none;">
         <div class="admin-header">
-            <h2><i class="fas fa-cogs"></i> لوحة تحكم الإدارة</h2>
-            <button class="btn-logout" onclick="logoutAdmin()">تسجيل خروج <i class="fas fa-sign-out-alt"></i></button>
+            <div class="admin-header-left">
+                <button class="btn-back" onclick="goToMainSite()" title="العودة للقائمة الرئيسية">
+                    <i class="fas fa-arrow-right"></i> العودة للرئيسية
+                </button>
+                <h2><i class="fas fa-cogs"></i> لوحة تحكم الإدارة</h2>
+            </div>
+            <button class="btn-logout" onclick="logoutAdmin()">
+                تسجيل خروج <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
         <div class="admin-tabs">
             <button class="tab-link active" onclick="openAdminTab(event, 'tabMerchants')">التجار</button>
@@ -151,7 +158,7 @@
                     <div class="form-group">
                         <label for="productImage">صورة المنتج *</label>
                         <div class="image-upload-container">
-                            <input type="file" id="productImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                            <input type="file" id="productImage" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                             <button type="button" class="upload-btn" onclick="document.getElementById('productImage').click()">
                                 <i class="fas fa-upload"></i> اختر صورة
                             </button>
@@ -159,7 +166,6 @@
                                 <i class="fas fa-image" style="font-size: 3rem; color: #ccc;"></i>
                                 <p style="color: #999; margin-top: 10px;">لم يتم اختيار صورة</p>
                             </div>
-                            <input type="hidden" id="imageData">
                         </div>
                     </div>
                     

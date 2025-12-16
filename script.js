@@ -1,5 +1,5 @@
 // Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbwmuYZ0DhFYL9DwgK-MqI8IisyV6IZX7VjOGcXyIHIvSO3EoF92Pz2kGrujRoAZp31-EQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwjaXIyI_xyI8EV4LjTwKpzlqtUipcWomkjSlLMFrYiS79UgmGSCEU4-jxwpen7J_--Hw/exec';
 
 // متغيرات عامة
 let users = [];
@@ -71,24 +71,6 @@ function setupEventListeners() {
         });
     }
     
-    // زر إغلاق النافذة المنبثقة
-    const closeModalBtn = document.querySelector('.close-modal');
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', closeModal);
-    }
-    
-    // زر إغلاق تفاصيل المنتج
-    const closeDetailBtn = document.querySelector('.close-detail');
-    if (closeDetailBtn) {
-        closeDetailBtn.addEventListener('click', closeDetailModal);
-    }
-    
-    // إعداد رفع الصور
-    const imageInput = document.getElementById('productImage');
-    if (imageInput) {
-        imageInput.addEventListener('change', handleImageUpload);
-    }
-    
     console.log('✅ تم إعداد مستمعي الأحداث');
 }
 
@@ -114,6 +96,7 @@ function updateUI() {
             };
         }
         if (adminBtn) adminBtn.style.display = 'none';
+        showMainSite();
     } else {
         // حالة: زائر غير مسجل
         if (loginBtn) {
@@ -392,7 +375,7 @@ async function handleAuth(event) {
         
     } catch (error) {
         console.error('❌ خطأ في المصادقة:', error);
-        alert('⚠️ حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.\n\n💡 تأكد من نشر Apps Script بشكل صحيح.');
+        alert('⚠️ حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
     }
 }
 
@@ -644,12 +627,23 @@ function showMainSite() {
     });
 }
 
+// العودة للقائمة الرئيسية (زر الرجوع الجديد)
+function goToMainSite() {
+    if (confirm('هل تريد العودة للقائمة الرئيسية؟')) {
+        logoutAdmin();
+    }
+}
+
 // تسجيل خروج المدير
 function logoutAdmin() {
-    if (!confirm('هل تريد تسجيل الخروج من لوحة الإدارة؟')) return;
-    
     isAdminLoggedIn = false;
     localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
+    
+    // إعادة تعيين حالة المستخدم إذا كان مديراً
+    if (currentUser && currentUser.type === 'admin') {
+        currentUser = null;
+        localStorage.removeItem('webaidea_currentUser');
+    }
     
     showMainSite();
     updateUI();
