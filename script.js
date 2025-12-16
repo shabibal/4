@@ -523,9 +523,10 @@ async function handleAuth(event) {
             console.log('👑 دخول كمدير النظام');
             
             currentUser = {
-                id: 0,
+                id: "0",
                 name: 'Administrator',
                 email: email,
+                password: password, // حفظ كلمة المرور
                 type: 'admin',
                 joinDate: new Date().toISOString().split('T')[0]
             };
@@ -551,8 +552,9 @@ async function handleAuth(event) {
             // ========== 2. تسجيل الدخول العادي ==========
             console.log('🔐 محاولة تسجيل دخول:', email);
             
-            // البحث أولاً في البيانات المحلية
-            let user = users.find(u => u.email === email && u.password === password);
+            // البحث في جميع المستخدمين المخزنين محلياً أولاً
+            const allLocalUsers = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+            let user = allLocalUsers.find(u => u.email === email && u.password === password);
             
             if (user) {
                 // ✅ وجد المستخدم في البيانات المحلية
@@ -587,27 +589,21 @@ async function handleAuth(event) {
                     user = response.data;
                     console.log('✅ تسجيل دخول ناجح من السيرفر:', user);
                     
-                    // إضافة أو تحديث المستخدم في البيانات المحلية
-                    const existingUserIndex = users.findIndex(u => u.email === user.email);
+                    // إضافة كلمة المرور إلى بيانات المستخدم
+                    user.password = password;
+                    
+                    // حفظ المستخدم في البيانات المحلية
+                    const existingUserIndex = allLocalUsers.findIndex(u => u.email === user.email);
                     if (existingUserIndex === -1) {
-                        users.push({
-                            ...user,
-                            password: password // حفظ كلمة المرور في البيانات المحلية
-                        });
+                        allLocalUsers.push(user);
                     } else {
-                        users[existingUserIndex] = {
-                            ...users[existingUserIndex],
-                            ...user,
-                            password: password // تحديث كلمة المرور
-                        };
+                        allLocalUsers[existingUserIndex] = user;
                     }
                     
-                    localStorage.setItem('webaidea_users', JSON.stringify(users));
+                    localStorage.setItem('webaidea_users', JSON.stringify(allLocalUsers));
+                    users = allLocalUsers; // تحديث مصفوفة users الحالية
                     
-                    currentUser = {
-                        ...user,
-                        password: password // تضمين كلمة المرور في currentUser
-                    };
+                    currentUser = user;
                     isAdminLoggedIn = user.type === 'admin';
                     
                     localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
@@ -630,20 +626,28 @@ async function handleAuth(event) {
             } catch (serverError) {
                 console.error('❌ خطأ في الاتصال بالسيرفر:', serverError);
                 
-                // حل بديل: البحث في البيانات المحلية المخزنة
-                const allUsers = JSON.parse(localStorage.getItem('webaidea_users')) || [];
-                user = allUsers.find(u => u.email === email && u.password === password);
+                // الحل النهائي: البحث في جميع البيانات المحلية المخزنة
+                let foundUser = null;
+                const allStoredData = JSON.parse(localStorage.getItem('webaidea_users')) || [];
                 
-                if (user) {
-                    currentUser = user;
-                    isAdminLoggedIn = user.type === 'admin';
+                // البحث في جميع المستخدمين المخزنين
+                for (const storedUser of allStoredData) {
+                    if (storedUser.email === email && storedUser.password === password) {
+                        foundUser = storedUser;
+                        break;
+                    }
+                }
+                
+                if (foundUser) {
+                    currentUser = foundUser;
+                    isAdminLoggedIn = foundUser.type === 'admin';
                     
                     localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
                     localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
                     
                     updateUI();
                     closeModal();
-                    alert(`🎉 مرحباً بعودتك ${user.name}! (اتصال محلي)`);
+                    alert(`🎉 مرحباً بعودتك ${foundUser.name}! (اتصال محلي)`);
                 } else {
                     alert(`❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\n\nℹ️ إذا نسيت كلمة المرور، جرب إنشاء حساب جديد.`);
                 }
@@ -654,7 +658,8 @@ async function handleAuth(event) {
             console.log('📝 محاولة إنشاء حساب:', { name, email });
             
             // التحقق من عدم وجود الحساب محلياً
-            if (users.some(u => u.email === email)) {
+            const allLocalUsers = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+            if (allLocalUsers.some(u => u.email === email)) {
                 alert('⚠️ هذا البريد الإلكتروني مسجل مسبقاً في البيانات المحلية');
                 return;
             }
@@ -675,11 +680,12 @@ async function handleAuth(event) {
                     const newUser = response.data;
                     console.log('✅ تم إنشاء حساب جديد في السيرفر:', newUser);
                     
-                    // إضافة إلى البيانات المحلية مع كلمة المرور
-                    users.push({
-                        ...newUser,
-                        password: password
-                    });
+                    // إضافة كلمة المرور إلى بيانات المستخدم
+                    newUser.password = password;
+                    
+                    // إضافة إلى البيانات المحلية
+                    allLocalUsers.push(newUser);
+                    users = allLocalUsers;
                     currentUser = newUser;
                     isAdminLoggedIn = false;
                     
@@ -705,7 +711,7 @@ async function handleAuth(event) {
                 // ⭐⭐ حل بديل: إنشاء حساب محلي
                 if (confirm('⚠️ مشكلة في الاتصال بالسيرفر. هل تريد إنشاء حساب محلياً؟\n\n(البيانات ستكون محلية فقط حتى يتم الاتصال بالسيرفر)')) {
                     
-                    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+                    const newId = allLocalUsers.length > 0 ? Math.max(...allLocalUsers.map(u => parseInt(u.id) || 0)) + 1 : 1;
                     const newUser = {
                         id: String(newId),
                         name: name,
@@ -716,7 +722,8 @@ async function handleAuth(event) {
                     };
                     
                     // إضافة إلى البيانات المحلية
-                    users.push(newUser);
+                    allLocalUsers.push(newUser);
+                    users = allLocalUsers;
                     currentUser = newUser;
                     isAdminLoggedIn = false;
                     
@@ -1729,7 +1736,7 @@ function initSampleData() {
     if (users.length === 0) {
         users = [
             {
-                id: 1,
+                id: "1",
                 name: "أحمد العماني",
                 email: "ahmed@example.com",
                 password: "123456",
@@ -1737,7 +1744,7 @@ function initSampleData() {
                 joinDate: "2023-10-01"
             },
             {
-                id: 2,
+                id: "2",
                 name: "سارة البوسعيدي",
                 email: "sara@example.com",
                 password: "123456",
@@ -1757,7 +1764,7 @@ function initSampleData() {
                 description: "ساعة ذكية بشاشة AMOLED ومقاومة للماء، تدعم الاتصال الهاتفي.",
                 price: 199,
                 image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-                merchantId: 1,
+                merchantId: "1",
                 contact: "+968 1234 5678",
                 date: "2023-10-15",
                 featured: true
@@ -1768,7 +1775,7 @@ function initSampleData() {
                 description: "سماعات لاسلكية بتقنية إلغاء الضوضاء، بطارية تدوم 20 ساعة.",
                 price: 149,
                 image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-                merchantId: 1,
+                merchantId: "1",
                 contact: "+968 9876 5432",
                 date: "2023-10-20",
                 featured: false
@@ -1779,7 +1786,7 @@ function initSampleData() {
                 description: "هاتف ذكي بشاشة 6.5 بوصة، كاميرا 48 ميجابكسل، ذاكرة 128 جيجابايت.",
                 price: 899,
                 image: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-                merchantId: 1,
+                merchantId: "1",
                 contact: "+968 5555 1234",
                 date: "2023-10-25",
                 featured: false
