@@ -1,5 +1,5 @@
 // Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbwC6ZSTDDN-cEv8ltjonYrTUwJCPkXKDRYITFP24qBcenPN46hZKRs2XE1rmRJvw7X3Jw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzlpKvDwcmDGtfEjgdzs3ABskVlBghi8cjOQSeo_xNkLth8mPOSlTYmTj_xKJnVDAq-xg/exec';
 
 // متغيرات عامة
 let users = [];
@@ -18,8 +18,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // إعداد الأحداث
     setupEventListeners();
     
-    // تحميل البيانات من السيرفر
-    await loadDataFromServer();
+    try {
+        await loadDataFromServer();
+    } catch (error) {
+        console.error('خطأ في تحميل البيانات من السيرفر:', error);
+    }
     
     // عرض البيانات
     renderProducts();
@@ -152,7 +155,7 @@ async function loadDataFromServer() {
     }
 }
 
-// دالة مساعدة للاتصال بالAPI (GET)
+// دالة مساعدة للاتصال بالAPI (GET فقط)
 async function fetchData(action, params = {}) {
     const url = new URL(API_URL);
     url.searchParams.append('action', action);
@@ -162,7 +165,7 @@ async function fetchData(action, params = {}) {
     }
     
     try {
-        console.log(`🌐 طلب API: ${action}`, params);
+        console.log(`🌐 طلب API: ${action}`);
         const response = await fetch(url.toString());
         const data = await response.json();
         return data;
@@ -172,24 +175,19 @@ async function fetchData(action, params = {}) {
     }
 }
 
-// دالة مساعدة للاتصال بالAPI (POST) - تم التعديل
+// دالة مساعدة للاتصال بالAPI (POST)
 async function postData(action, params = {}) {
+    // سنستخدم GET بدلاً من POST بسبب مشاكل CORS
+    const url = new URL(API_URL);
+    url.searchParams.append('action', action);
+    
+    for (const key in params) {
+        url.searchParams.append(key, params[key]);
+    }
+    
     try {
         console.log(`📤 إرسال بيانات: ${action}`, params);
-        
-        const requestData = {
-            action: action,
-            ...params
-        };
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestData)
-        });
-        
+        const response = await fetch(url.toString());
         const data = await response.json();
         return data;
     } catch (error) {
@@ -311,7 +309,7 @@ async function handleAuth(event) {
             
             // إذا لم يوجد محلياً، جرب السيرفر
             if (!user) {
-                const response = await postData('login', { email, password });
+                const response = await fetchData('login', { email, password });
                 
                 if (response.status === 200) {
                     user = response.data;
@@ -348,7 +346,7 @@ async function handleAuth(event) {
             }
             
             // محاولة التسجيل في السيرفر
-            const response = await postData('register', { name, email, password });
+            const response = await fetchData('register', { name, email, password });
             
             if (response.status === 201) {
                 const newUser = response.data;
@@ -973,8 +971,6 @@ async function postAdminAd(event) {
         
         // 2. نشر المنتج
         const response = await postData('addProduct', {
-            isAdmin: 'true',
-            userId: merchantId,
             title: title,
             price: parseFloat(price),
             description: description,
