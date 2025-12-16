@@ -1,5 +1,5 @@
-// Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbwC6ZSTDDN-cEv8ltjonYrTUwJCPkXKDRYITFP24qBcenPN46hZKRs2XE1rmRJvw7X3Jw/exec';
+// Webaidea Platform - JavaScript with Google Sheets Integration - FIXED VERSION
+const API_URL = 'https://script.google.com/macros/s/AKfycbzRsdGpvl8hESQ8Yyc19vdHek87a5b6Leo1JYjty2j3LMqRumgYSpN1msO2D1TGthZc/exec';
 
 // متغيرات عامة
 let users = [];
@@ -7,159 +7,290 @@ let products = [];
 let currentUser = null;
 let isAdminLoggedIn = false;
 let selectedImageData = null;
-let dataInitialized = false;
 let merchantSelectedImage = null;
 
-// تهيئة الموقع عند التحميل
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 تهيئة موقع ويب أيديا...');
+// ========== تهيئة الموقع عند تحميل الصفحة ==========
+window.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 بدء تهيئة موقع ويب أيديا - النسخة المعدلة...');
     
-    // تحميل البيانات المحلية
-    loadLocalData();
+    // 1. تحميل البيانات المحلية فوراً
+    await loadLocalData();
     
-    // تهيئة البيانات التجريبية مرة واحدة فقط
-    if (!dataInitialized && users.length === 0 && products.length === 0) {
-        initSampleData();
-        dataInitialized = true;
+    // 2. التحقق من وجود بيانات محلية صالحة
+    const hasLocalData = users.length > 0 || products.length > 0;
+    console.log('📊 البيانات المحلية:', { 
+        users: users.length, 
+        products: products.length,
+        currentUser: currentUser ? currentUser.name : 'لا يوجد'
+    });
+    
+    // 3. إذا لم توجد بيانات، أنشئ بيانات تجريبية
+    if (!hasLocalData || (users.length === 0 && products.length === 0)) {
+        console.log('📝 إنشاء بيانات تجريبية...');
+        await initSampleData();
     }
     
-    // إعداد الأحداث
-    setupEventListeners();
-    
-    // إضافة زر مزامنة البيانات
-    addSyncButton();
-    
-    try {
-        await loadDataFromServer();
-    } catch (error) {
-        console.error('خطأ في تحميل البيانات من السيرفر:', error);
-    }
-    
-    // عرض البيانات
+    // 4. عرض البيانات المحلية فوراً
     renderProducts();
     updateUI();
     
-    console.log('✅ تم تهيئة الموقع بنجاح');
+    // 5. إعداد الأحداث
+    setupEventListeners();
+    
+    // 6. إضافة زر المزامنة
+    addSyncButton();
+    
+    // 7. محاولة تحميل البيانات من السيرفر في الخلفية
+    setTimeout(async () => {
+        try {
+            console.log('🔄 محاولة تحميل البيانات من السيرفر...');
+            await loadDataFromServer();
+            renderProducts();
+            updateUI();
+            console.log('✅ تم تحميل البيانات من السيرفر بنجاح');
+        } catch (error) {
+            console.log('⚠️ استخدام البيانات المحلية فقط:', error.message);
+        }
+    }, 1500);
+    
+    console.log('✅ تم تهيئة الموقع بنجاح - النسخة المعدلة');
 });
 
-// ==================== دالة مزامنة البيانات مع السيرفر ====================
-async function loadDataFromServer() {
+// ========== دالة تحميل البيانات المحلية ==========
+async function loadLocalData() {
+    console.log('📥 جاري تحميل البيانات المحلية...');
+    
     try {
-        console.log('🔄 جاري تحميل البيانات من السيرفر...');
-        
-        // محاولة تحميل البيانات من السيرفر
-        const [productsResponse, usersResponse] = await Promise.allSettled([
-            fetchData('getProducts'),
-            fetchData('getUsers')
-        ]);
-        
-        // معالجة استجابة المنتجات
-        if (productsResponse.status === 'fulfilled' && productsResponse.value.status === 200) {
-            const serverProducts = productsResponse.value.data || [];
-            
-            // الحصول على المنتجات المحلية
-            const localProducts = JSON.parse(localStorage.getItem('webaidea_products')) || [];
-            
-            // ========== التحديث الهام: دمج المنتجات ==========
-            // إنشاء خريطة للتحقق من التكرارات
-            const productMap = new Map();
-            
-            // أولاً: إضافة جميع المنتجات من السيرفر
-            serverProducts.forEach(product => {
-                productMap.set(product.id, product);
-            });
-            
-            // ثانياً: إضافة المنتجات المحلية التي ليست في السيرفر
-            localProducts.forEach(product => {
-                // إذا كان المنتج المحلي غير موجود في السيرفر، أضفه
-                if (!productMap.has(product.id)) {
-                    productMap.set(product.id, product);
-                }
-            });
-            
-            // تحويل الخريطة إلى مصفوفة
-            products = Array.from(productMap.values());
-            
-            // حفظ في التخزين المحلي
-            localStorage.setItem('webaidea_products', JSON.stringify(products));
-            console.log(`✅ تم دمج المنتجات: ${serverProducts.length} من السيرفر + ${localProducts.length} محلية = ${products.length} منتج`);
-            
+        // 1. تحميل المستخدمين
+        const storedUsers = localStorage.getItem('webaidea_users');
+        if (storedUsers && storedUsers !== 'undefined' && storedUsers !== 'null') {
+            users = JSON.parse(storedUsers);
+            console.log(`✅ تم تحميل ${users.length} مستخدم`);
         } else {
-            console.warn('⚠️ لم يتم تحميل المنتجات من السيرفر، استخدام البيانات المحلية فقط');
-            products = JSON.parse(localStorage.getItem('webaidea_products')) || [];
+            users = [];
+            console.log('📭 لا يوجد مستخدمين محفوظين');
         }
         
-        // معالجة استجابة المستخدمين
-        if (usersResponse.status === 'fulfilled' && usersResponse.value.status === 200) {
-            const serverUsers = usersResponse.value.data || [];
-            const localUsers = JSON.parse(localStorage.getItem('webaidea_users')) || [];
-            
-            // دمج المستخدمين بطريقة مشابهة
-            const userMap = new Map();
-            
-            serverUsers.forEach(user => {
-                userMap.set(user.email, user);
-            });
-            
-            localUsers.forEach(user => {
-                if (!userMap.has(user.email)) {
-                    userMap.set(user.email, user);
-                }
-            });
-            
-            users = Array.from(userMap.values());
-            localStorage.setItem('webaidea_users', JSON.stringify(users));
-            console.log(`✅ تم دمج المستخدمين: ${serverUsers.length} من السيرفر + ${localUsers.length} محلية = ${users.length} مستخدم`);
-            
+        // 2. تحميل المنتجات
+        const storedProducts = localStorage.getItem('webaidea_products');
+        if (storedProducts && storedProducts !== 'undefined' && storedProducts !== 'null') {
+            products = JSON.parse(storedProducts);
+            console.log(`✅ تم تحميل ${products.length} منتج`);
         } else {
-            console.warn('⚠️ لم يتم تحميل المستخدمين من السيرفر، استخدام البيانات المحلية فقط');
-            users = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+            products = [];
+            console.log('📭 لا يوجد منتجات محفوظة');
         }
         
-        // تحديث جداول الإدارة إذا كانت مفتوحة
-        if (isAdminLoggedIn) {
-            renderMerchantsTable();
-            renderAccountsTable();
-            renderAdsTable();
-            populateMerchantSelect();
+        // 3. تحميل حالة المستخدم الحالي
+        const storedCurrentUser = localStorage.getItem('webaidea_currentUser');
+        if (storedCurrentUser && storedCurrentUser !== 'undefined' && storedCurrentUser !== 'null') {
+            currentUser = JSON.parse(storedCurrentUser);
+            console.log(`👤 المستخدم الحالي: ${currentUser.name} (${currentUser.type})`);
+        } else {
+            currentUser = null;
+            console.log('👤 لا يوجد مستخدم مسجل دخوله');
         }
         
-    } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات من السيرفر:', error);
+        // 4. تحميل حالة المدير
+        const storedAdminStatus = localStorage.getItem('webaidea_adminLoggedIn');
+        if (storedAdminStatus && storedAdminStatus !== 'undefined' && storedAdminStatus !== 'null') {
+            isAdminLoggedIn = JSON.parse(storedAdminStatus);
+            console.log(`👑 حالة المدير: ${isAdminLoggedIn ? 'مسجل دخول' : 'غير مسجل'}`);
+        } else {
+            isAdminLoggedIn = false;
+        }
         
-        // استخدام البيانات المحلية فقط في حالة الخطأ
-        products = JSON.parse(localStorage.getItem('webaidea_products')) || [];
-        users = JSON.parse(localStorage.getItem('webaidea_users')) || [];
+        return true;
         
-        console.log(`⚠️ استخدام البيانات المحلية فقط: ${products.length} منتج، ${users.length} مستخدم`);
-    }
-}
-
-// تحميل البيانات المحلية من localStorage
-function loadLocalData() {
-    try {
-        users = JSON.parse(localStorage.getItem('webaidea_users')) || [];
-        products = JSON.parse(localStorage.getItem('webaidea_products')) || [];
-        currentUser = JSON.parse(localStorage.getItem('webaidea_currentUser')) || null;
-        isAdminLoggedIn = JSON.parse(localStorage.getItem('webaidea_adminLoggedIn')) || false;
-        
-        console.log('📥 البيانات المحلية:', { 
-            users: users.length, 
-            products: products.length,
-            currentUser: currentUser ? currentUser.name : 'لا يوجد',
-            isAdminLoggedIn 
-        });
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات المحلية:', error);
+        
+        // محاولة استعادة من النسخ الاحتياطية
+        try {
+            const backupUsers = localStorage.getItem('webaidea_backup_users');
+            const backupProducts = localStorage.getItem('webaidea_backup_products');
+            const backupCurrentUser = localStorage.getItem('webaidea_backup_currentUser');
+            
+            if (backupUsers && backupProducts) {
+                console.log('🔄 استعادة البيانات من النسخ الاحتياطية');
+                users = JSON.parse(backupUsers);
+                products = JSON.parse(backupProducts);
+                currentUser = backupCurrentUser ? JSON.parse(backupCurrentUser) : null;
+                
+                // حفظ البيانات المستعادة
+                saveLocalData();
+                return true;
+            }
+        } catch (backupError) {
+            console.error('❌ فشل استعادة النسخ الاحتياطية:', backupError);
+        }
+        
+        // إعادة تعيين المتغيرات
         users = [];
         products = [];
         currentUser = null;
         isAdminLoggedIn = false;
+        return false;
     }
 }
 
-// إعداد مستمعي الأحداث
+// ========== دالة حفظ البيانات محلياً ==========
+function saveLocalData() {
+    console.log('💾 جاري حفظ البيانات محلياً...');
+    
+    try {
+        // 1. حفظ المستخدمين
+        localStorage.setItem('webaidea_users', JSON.stringify(users));
+        
+        // 2. حفظ المنتجات
+        localStorage.setItem('webaidea_products', JSON.stringify(products));
+        
+        // 3. حفظ حالة المستخدم الحالي
+        if (currentUser) {
+            localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
+        } else {
+            localStorage.removeItem('webaidea_currentUser');
+        }
+        
+        // 4. حفظ حالة المدير
+        localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
+        
+        // 5. إنشاء نسخة احتياطية
+        localStorage.setItem('webaidea_backup_users', JSON.stringify(users));
+        localStorage.setItem('webaidea_backup_products', JSON.stringify(products));
+        if (currentUser) {
+            localStorage.setItem('webaidea_backup_currentUser', JSON.stringify(currentUser));
+        }
+        
+        console.log(`✅ تم حفظ ${users.length} مستخدم و ${products.length} منتج`);
+        
+        return true;
+    } catch (error) {
+        console.error('❌ خطأ في حفظ البيانات المحلية:', error);
+        showNotification('❌ حدث خطأ في حفظ البيانات', 'error');
+        return false;
+    }
+}
+
+// ========== دالة تحميل البيانات من السيرفر ==========
+async function loadDataFromServer() {
+    try {
+        console.log('🌐 جاري الاتصال بالسيرفر...');
+        
+        let serverUsers = [];
+        let serverProducts = [];
+        
+        // محاولة تحميل المستخدمين
+        try {
+            const usersResponse = await fetchData('getUsers');
+            if (usersResponse && usersResponse.status === 200) {
+                serverUsers = usersResponse.data || [];
+                console.log(`✅ تم تحميل ${serverUsers.length} مستخدم من السيرفر`);
+            }
+        } catch (error) {
+            console.warn('⚠️ تعذر تحميل المستخدمين من السيرفر:', error.message);
+        }
+        
+        // محاولة تحميل المنتجات
+        try {
+            const productsResponse = await fetchData('getProducts');
+            if (productsResponse && productsResponse.status === 200) {
+                serverProducts = productsResponse.data || [];
+                console.log(`✅ تم تحميل ${serverProducts.length} منتج من السيرفر`);
+            }
+        } catch (error) {
+            console.warn('⚠️ تعذر تحميل المنتجات من السيرفر:', error.message);
+        }
+        
+        // دمج البيانات المحلية مع السيرفر
+        if (serverUsers.length > 0 || serverProducts.length > 0) {
+            // دمج المستخدمين
+            const mergedUsers = mergeUsers(users, serverUsers);
+            
+            // دمج المنتجات
+            const mergedProducts = mergeProducts(products, serverProducts);
+            
+            // تحديث المتغيرات العامة
+            users = mergedUsers;
+            products = mergedProducts;
+            
+            // حفظ البيانات المدمجة
+            saveLocalData();
+            
+            console.log(`✅ تم دمج البيانات: ${users.length} مستخدم، ${products.length} منتج`);
+            
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات من السيرفر:', error);
+        return false;
+    }
+}
+
+// ========== دالة دمج المستخدمين ==========
+function mergeUsers(localUsers, serverUsers) {
+    const userMap = new Map();
+    
+    // أولاً: إضافة مستخدمي السيرفر
+    serverUsers.forEach(user => {
+        if (user.email) {
+            userMap.set(user.email, {
+                ...user,
+                source: 'server',
+                synced: true
+            });
+        }
+    });
+    
+    // ثانياً: إضافة المستخدمين المحليين غير الموجودين في السيرفر
+    localUsers.forEach(user => {
+        if (user.email && !userMap.has(user.email)) {
+            userMap.set(user.email, {
+                ...user,
+                source: user.source || 'local',
+                synced: user.synced || false
+            });
+        }
+    });
+    
+    return Array.from(userMap.values());
+}
+
+// ========== دالة دمج المنتجات ==========
+function mergeProducts(localProducts, serverProducts) {
+    const productMap = new Map();
+    
+    // أولاً: إضافة منتجات السيرفر
+    serverProducts.forEach(product => {
+        if (product.id) {
+            productMap.set(product.id, {
+                ...product,
+                source: 'server',
+                synced: true
+            });
+        }
+    });
+    
+    // ثانياً: إضافة المنتجات المحلية غير الموجودة في السيرفر
+    localProducts.forEach(product => {
+        if (product.id && !productMap.has(product.id)) {
+            productMap.set(product.id, {
+                ...product,
+                source: product.source || 'local',
+                synced: product.synced || false
+            });
+        }
+    });
+    
+    return Array.from(productMap.values());
+}
+
+// ========== إعداد مستمعي الأحداث ==========
 function setupEventListeners() {
+    console.log('🔧 جاري إعداد مستمعي الأحداث...');
+    
     // زر تسجيل الدخول في الشريط
     const loginBtn = document.querySelector('.login-btn');
     if (loginBtn) {
@@ -190,32 +321,61 @@ function setupEventListeners() {
     console.log('✅ تم إعداد مستمعي الأحداث');
 }
 
-// دالة جديدة: تسجيل خروج المستخدم العادي
+// ========== دالة تسجيل خروج المستخدم ==========
 function logoutUser() {
     if (confirm('هل تريد تسجيل الخروج؟')) {
-        // إعادة تعيين جميع المتغيرات
+        const backupUser = currentUser;
+        
+        // إعادة تعيين الحالة
         currentUser = null;
         isAdminLoggedIn = false;
         
-        // إزالة البيانات من localStorage
-        localStorage.removeItem('webaidea_currentUser');
-        localStorage.removeItem('webaidea_adminLoggedIn');
+        // حفظ الحالة الجديدة
+        saveLocalData();
         
         // تحديث الواجهة
         updateUI();
         
-        // إخفاء لوحة الإدارة إذا كانت مفتوحة
+        // إخفاء لوحة الإدارة
         showMainSite();
         
         // إزالة زر نشر الإعلان
         const postBtn = document.getElementById('merchantPostBtn');
         if (postBtn) postBtn.remove();
         
-        alert('✅ تم تسجيل الخروج بنجاح.');
+        showNotification('✅ تم تسجيل الخروج بنجاح', 'success');
+        
+        // حفظ نسخة احتياطية من المستخدم المسجل
+        if (backupUser) {
+            localStorage.setItem('webaidea_lastUser', JSON.stringify(backupUser));
+        }
     }
 }
 
-// دالة جديدة: عرض زر الإدارة في شريط التنقل
+// ========== تحديث واجهة المستخدم ==========
+function updateUI() {
+    console.log('🎨 جاري تحديث واجهة المستخدم...');
+    
+    // تحديث أزرار التنقل
+    updateNavbarButtons();
+    
+    // التحقق من حالة المستخدم
+    if (isAdminLoggedIn && currentUser && currentUser.type === 'admin') {
+        showAdminPanel();
+    } else {
+        showMainSite();
+        
+        // إظهار زر نشر الإعلان للتجار
+        if (currentUser && currentUser.type === 'merchant') {
+            showMerchantPostButton();
+        }
+    }
+    
+    // إظهار عدد المنتجات في الكونسول
+    console.log(`📊 عدد المنتجات المعروضة: ${products.length}`);
+}
+
+// ========== تحديث أزرار التنقل ==========
 function updateNavbarButtons() {
     const adminBtn = document.getElementById('adminDashboardBtn');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -225,16 +385,19 @@ function updateNavbarButtons() {
         // إخفاء زر تسجيل الدخول
         if (loginBtn) loginBtn.style.display = 'none';
         
-        // إظهار زر الإدارة فقط للمدير
-        if (adminBtn && isAdminLoggedIn && currentUser.type === 'admin') {
-            adminBtn.style.display = 'flex';
-        } else if (adminBtn) {
-            adminBtn.style.display = 'none';
-        }
-        
-        // إظهار زر الخروج لجميع المستخدمين المسجلين
+        // إظهار زر الخروج
         if (logoutBtn) logoutBtn.style.display = 'flex';
         
+        // إظهار زر الإدارة للمدير فقط
+        if (adminBtn) {
+            if (isAdminLoggedIn && currentUser.type === 'admin') {
+                adminBtn.style.display = 'flex';
+            } else {
+                adminBtn.style.display = 'none';
+            }
+        }
+        
+        console.log(`👤 أزرار التنقل: ${currentUser.name} (${currentUser.type})`);
     } else {
         // إظهار زر تسجيل الدخول
         if (loginBtn) loginBtn.style.display = 'flex';
@@ -242,59 +405,96 @@ function updateNavbarButtons() {
         // إخفاء زر الإدارة وزر الخروج
         if (adminBtn) adminBtn.style.display = 'none';
         if (logoutBtn) logoutBtn.style.display = 'none';
+        
+        console.log('👤 أزرار التنقل: زائر');
     }
 }
 
-// تحديث واجهة المستخدم بناءً على حالة الدخول
-function updateUI() {
-    if (isAdminLoggedIn && currentUser && currentUser.type === 'admin') {
-        // حالة: مدير مسجل دخوله
-        // تحديث أزرار التنقل
-        updateNavbarButtons();
+// ========== عرض المنتجات ==========
+function renderProducts() {
+    const container = document.getElementById('productsContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (products.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #666;">
+                <i class="fas fa-box-open" style="font-size: 4rem; margin-bottom: 1rem; color: #ccc;"></i>
+                <h3>لا توجد منتجات حالياً</h3>
+                <p>كن أول من يعرض منتجاته على المنصة!</p>
+                ${!currentUser ? `
+                    <a href="javascript:void(0);" class="btn btn-primary" onclick="openAuthModal()" style="margin-top: 1rem;">
+                        <i class="fas fa-user-plus"></i> سجل الآن لعرض منتجاتك
+                    </a>
+                ` : ''}
+            </div>
+        `;
+        return;
+    }
+    
+    // فرز المنتجات: المميزة أولاً ثم الأحدث
+    const sortedProducts = [...products].sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return new Date(b.date || 0) - new Date(a.date || 0);
+    });
+    
+    sortedProducts.forEach(product => {
+        const merchant = users.find(u => u.id == product.merchantId || u.email === product.merchantId);
+        const card = document.createElement('div');
+        card.className = 'product-card';
         
-        // إظهار لوحة الإدارة تلقائياً
-        showAdminPanel();
-        
-    } else if (currentUser) {
-        // حالة: مستخدم عادي مسجل دخوله
-        // تحديث أزرار التنقل
-        updateNavbarButtons();
-        
-        // عرض زر نشر الإعلان إذا كان المستخدم تاجراً
-        if (currentUser.type === 'merchant') {
-            showMerchantPostButton();
+        // إضافة علامة "مميز" للمنتجات المميزة
+        if (product.featured) {
+            card.innerHTML = `<div class="special-badge"><i class="fas fa-crown"></i> مميز</div>`;
         }
         
-        showMainSite();
-    } else {
-        // حالة: زائر غير مسجل
-        // تحديث أزرار التنقل
-        updateNavbarButtons();
+        // إضافة علامة "محلي" للمنتجات غير المزامنة
+        if (product.source === 'local' && !product.synced) {
+            card.innerHTML += `
+                <div class="special-badge" style="top: 45px; right: 10px; background: #ff9800;">
+                    <i class="fas fa-laptop-house"></i> محلي
+                </div>
+            `;
+        }
         
-        showMainSite();
-    }
+        card.innerHTML += `
+            <div class="product-image">
+                <img src="${product.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                     alt="${product.title || 'منتج'}" 
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading'">
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${product.title || 'بدون عنوان'}</h3>
+                <p class="product-description">
+                    ${(product.description || '').substring(0, 80)}
+                    ${product.description && product.description.length > 80 ? '...' : ''}
+                </p>
+                <div class="product-meta">
+                    <div>
+                        <div class="product-price">${product.price || 0} ريال</div>
+                        <div class="product-merchant">
+                            <i class="fas fa-user"></i> ${merchant ? merchant.name : 'تاجر'}
+                        </div>
+                    </div>
+                    <div class="product-date" style="font-size: 0.8rem; color: #666;">
+                        <i class="fas fa-calendar"></i> ${product.date || ''}
+                    </div>
+                </div>
+                <button class="view-btn" onclick="showProductDetail('${product.id}')">
+                    <i class="fas fa-eye"></i> عرض التفاصيل
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+    
+    console.log(`✅ تم عرض ${sortedProducts.length} منتج`);
 }
 
-// دالة جديدة: عرض خيارات المستخدم
-function showUserOptions() {
-    const options = [];
-    
-    options.push(`👤 ${currentUser.name}`);
-    options.push(`📧 ${currentUser.email}`);
-    options.push(`🎫 ${currentUser.type === 'merchant' ? 'تاجر' : currentUser.type === 'admin' ? 'مدير' : 'مستخدم عادي'}`);
-    
-    if (currentUser.type === 'merchant') {
-        options.push(`\n✅ يمكنك نشر إعلانات عادية`);
-        options.push(`📍 اضغط على زر "نشر إعلان" في أسفل الصفحة`);
-    } else if (currentUser.type === 'user') {
-        options.push(`\n⏳ حسابك عادي، تواصل مع الإدارة ليصبح تاجراً`);
-    }
-    
-    const message = options.join('\n');
-    alert(message);
-}
-
-// دالة جديدة: عرض زر نشر الإعلان للتجار
+// ========== عرض زر نشر الإعلان للتجار ==========
 function showMerchantPostButton() {
     // إزالة الزر السابق إذا كان موجوداً
     const oldBtn = document.getElementById('merchantPostBtn');
@@ -323,10 +523,16 @@ function showMerchantPostButton() {
     };
     
     document.body.appendChild(postBtn);
+    console.log('✅ تم إضافة زر نشر الإعلان للتجار');
 }
 
-// دالة جديدة: فتح نافذة نشر إعلان للتجار
+// ========== فتح نافذة نشر إعلان للتجار ==========
 function openMerchantAdModal() {
+    if (!currentUser || currentUser.type !== 'merchant') {
+        alert('❌ يجب أن تكون تاجراً لنشر إعلان');
+        return;
+    }
+    
     const modal = document.createElement('div');
     modal.id = 'merchantAdModal';
     modal.style.cssText = `
@@ -360,7 +566,7 @@ function openMerchantAdModal() {
                 
                 <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">السعر (ريال) *</label>
-                    <input type="number" id="merchantAdPrice" required style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;">
+                    <input type="number" id="merchantAdPrice" required min="1" style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;">
                 </div>
                 
                 <div style="margin-bottom: 1.5rem;">
@@ -370,7 +576,7 @@ function openMerchantAdModal() {
                 
                 <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">رقم التواصل *</label>
-                    <input type="tel" id="merchantAdContact" required style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;">
+                    <input type="tel" id="merchantAdContact" required pattern="[0-9+]{8,}" style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px;" placeholder="مثال: +96812345678">
                 </div>
                 
                 <div style="margin-bottom: 1.5rem;">
@@ -401,7 +607,7 @@ function openMerchantAdModal() {
     document.body.appendChild(modal);
 }
 
-// دالة جديدة: معالجة رفع صورة للتجار
+// ========== معالجة رفع صورة للتجار ==========
 function handleMerchantImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -434,14 +640,14 @@ function handleMerchantImageUpload(event) {
     reader.readAsDataURL(file);
 }
 
-// دالة جديدة: إغلاق نافذة نشر إعلان للتجار
+// ========== إغلاق نافذة نشر إعلان للتجار ==========
 function closeMerchantAdModal() {
     const modal = document.getElementById('merchantAdModal');
     if (modal) modal.remove();
     merchantSelectedImage = null;
 }
 
-// ==================== دالة جديدة: نشر إعلان للتجار (محسن) ====================
+// ========== نشر إعلان للتجار ==========
 async function postMerchantAd(event) {
     event.preventDefault();
     
@@ -468,122 +674,120 @@ async function postMerchantAd(event) {
     if (!confirm('هل تريد نشر هذا الإعلان؟')) return;
     
     try {
-        // رفع الصورة
-        const imageUrl = await uploadMerchantImage();
+        // إنشاء ID فريد للمنتج
+        const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
-        // إنشاء ID فريد للمنتج المحلي
-        const localProductId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        
-        // إنشاء المنتج محلياً
-        const newProduct = {
-            id: localProductId,
-            title: title,
-            price: parseFloat(price),
-            description: description,
-            image: imageUrl,
-            merchantId: currentUser.id,
-            contact: contact,
-            featured: false,
-            date: new Date().toISOString().split('T')[0],
-            source: 'local', // إضافة علامة لمعرفة مصدر المنتج
-            synced: false // لم يتم مزامنته مع السيرفر بعد
-        };
-        
-        // ========== حفظ في التخزين المحلي أولاً ==========
-        products.push(newProduct);
-        localStorage.setItem('webaidea_products', JSON.stringify(products));
-        
-        // تحديث العرض فوراً
-        renderProducts();
-        if (isAdminLoggedIn) {
-            renderAdsTable();
-        }
-        
-        // إغلاق النافذة وإعادة التعيين
-        closeMerchantAdModal();
-        merchantSelectedImage = null;
-        
-        // محاولة إرسال للسيرفر في الخلفية
-        setTimeout(async () => {
-            try {
-                const response = await postData('addProduct', {
-                    title: title,
-                    price: parseFloat(price),
-                    description: description,
-                    image: imageUrl,
-                    contact: contact,
-                    merchantId: currentUser.id,
-                    featured: 'false'
-                });
-                
-                if (response.status === 201) {
-                    // تحديث ID المنتج من المحلي إلى ID السيرفر
-                    const serverProductId = response.data.productId;
-                    
-                    // البحث عن المنتج المحلي وتحديثه
-                    const productIndex = products.findIndex(p => p.id === localProductId);
-                    
-                    if (productIndex !== -1) {
-                        // حفظ الـ ID القديم للإشارة
-                        const oldId = products[productIndex].id;
-                        
-                        // تحديث المنتج
-                        products[productIndex].id = serverProductId;
-                        products[productIndex].source = 'server';
-                        products[productIndex].synced = true;
-                        
-                        // حفظ التحديث في localStorage
-                        localStorage.setItem('webaidea_products', JSON.stringify(products));
-                        
-                        console.log(`✅ تم مزامنة المنتج: ${oldId} → ${serverProductId}`);
-                        
-                        // تحديث العرض مرة أخرى مع ID الجديد
-                        renderProducts();
-                        if (isAdminLoggedIn) {
-                            renderAdsTable();
-                        }
-                        
-                        // إشعار المستخدم بنجاح المزامنة
-                        showNotification('تم مزامنة إعلانك مع السيرفر بنجاح!', 'success');
-                    }
-                }
-            } catch (serverError) {
-                console.warn('⚠️ تم حفظ المنتج محلياً فقط:', serverError);
-                showNotification('تم حفظ الإعلان محلياً. سيتم محاولة المزامنة لاحقاً.', 'warning');
-            }
-        }, 1000); // تأخير 1 ثانية لإرسال البيانات
-        
-        alert('🎉 تم نشر إعلانك بنجاح!\n\n✅ تم حفظه محلياً وجاري محاولة مزامنته مع السيرفر.');
-        
-    } catch (error) {
-        console.error('❌ خطأ في نشر الإعلان:', error);
-        alert('⚠️ حدث خطأ أثناء نشر الإعلان');
-    }
-}
-
-// دالة جديدة: رفع صورة للتجار
-async function uploadMerchantImage() {
-    if (!merchantSelectedImage) return null;
-    
-    try {
-        // استخدام Unsplash images كبديل
+        // اختيار صورة عشوائية من Unsplash (بدلاً من رفع الصورة الحقيقية)
         const unsplashImages = [
             'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
             'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
             'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
         ];
         
         const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
-        return randomImage;
+        
+        // إنشاء المنتج
+        const newProduct = {
+            id: productId,
+            title: title,
+            price: parseFloat(price),
+            description: description,
+            image: randomImage,
+            merchantId: currentUser.id,
+            contact: contact,
+            featured: false,
+            date: new Date().toISOString().split('T')[0],
+            source: 'local',
+            synced: false,
+            createdAt: new Date().toISOString()
+        };
+        
+        console.log('📝 إنشاء منتج جديد:', newProduct);
+        
+        // إضافة المنتج إلى الذاكرة
+        products.push(newProduct);
+        console.log(`✅ تم إضافة المنتج إلى الذاكرة: ${products.length} منتج`);
+        
+        // الحفظ الفوري في localStorage
+        const saveSuccess = saveLocalData();
+        
+        if (saveSuccess) {
+            // تحديث العرض فوراً
+            renderProducts();
+            
+            // إغلاق النافذة
+            closeMerchantAdModal();
+            merchantSelectedImage = null;
+            
+            // إشعار النجاح
+            showNotification('✅ تم نشر إعلانك بنجاح!', 'success');
+            
+            // محاولة المزامنة مع السيرفر في الخلفية
+            setTimeout(async () => {
+                try {
+                    console.log('🔄 محاولة مزامنة المنتج مع السيرفر...');
+                    
+                    // محاولة الحصول على ID المستخدم من السيرفر
+                    let serverUserId = currentUser.id;
+                    if (currentUser.source === 'local') {
+                        // محاولة تسجيل الدخول للحصول على ID سيرفر
+                        try {
+                            const loginResponse = await fetchData('login', {
+                                email: currentUser.email,
+                                password: currentUser.password
+                            });
+                            
+                            if (loginResponse && loginResponse.status === 200) {
+                                serverUserId = loginResponse.data.id;
+                            }
+                        } catch (loginError) {
+                            console.warn('⚠️ لا يمكن الحصول على ID السيرفر:', loginError.message);
+                        }
+                    }
+                    
+                    const response = await postData('addProduct', {
+                        title: title,
+                        price: price,
+                        description: description,
+                        image: randomImage,
+                        contact: contact,
+                        merchantId: serverUserId || currentUser.id,
+                        featured: 'false'
+                    });
+                    
+                    if (response && response.status === 201) {
+                        // تحديث المنتج بعد المزامنة الناجحة
+                        const productIndex = products.findIndex(p => p.id === productId);
+                        if (productIndex !== -1) {
+                            products[productIndex].id = response.data.productId || productId;
+                            products[productIndex].source = 'server';
+                            products[productIndex].synced = true;
+                            
+                            saveLocalData();
+                            renderProducts();
+                            
+                            showNotification('✅ تم مزامنة إعلانك مع السيرفر', 'success');
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ تم حفظ المنتج محلياً فقط:', error.message);
+                    showNotification('⚠️ تم حفظ الإعلان محلياً. سيتم المزامنة لاحقاً', 'warning');
+                }
+            }, 1000);
+            
+        } else {
+            alert('❌ فشل حفظ الإعلان. يرجى المحاولة مرة أخرى.');
+        }
         
     } catch (error) {
-        console.error('❌ خطأ في معالجة الصورة:', error);
-        return 'https://via.placeholder.com/600x400?text=Product+Image';
+        console.error('❌ خطأ في نشر الإعلان:', error);
+        showNotification('❌ حدث خطأ أثناء نشر الإعلان', 'error');
     }
 }
 
-// ==================== وظائف المصادقة المحسنة ====================
+// ========== دوال المصادقة ==========
 
 // فتح نافذة المصادقة
 function openAuthModal() {
@@ -638,7 +842,7 @@ function switchAuthMode() {
     }
 }
 
-// ==================== دالة المصادقة الرئيسية المُصَحَّحة ====================
+// ========== دالة المصادقة الرئيسية ==========
 async function handleAuth(event) {
     event.preventDefault();
     
@@ -658,62 +862,65 @@ async function handleAuth(event) {
     }
     
     try {
-        // ========== 1. محاولة دخول كمدير ==========
+        // ========== دخول كمدير ==========
         if (email === 'msdfrrt@gmail.com' && password === 'Shabib95873061@99') {
             console.log('👑 دخول كمدير النظام');
             
             currentUser = {
-                id: "0",
+                id: "admin_0",
                 name: 'Administrator',
                 email: email,
                 password: password,
                 type: 'admin',
-                joinDate: new Date().toISOString().split('T')[0]
+                joinDate: new Date().toISOString().split('T')[0],
+                source: 'local',
+                synced: false
             };
             
             isAdminLoggedIn = true;
             
-            // حفظ في التخزين المحلي
-            localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(true));
+            // إضافة المدير إلى المستخدمين إذا لم يكن موجوداً
+            const existingAdmin = users.find(u => u.email === email);
+            if (!existingAdmin) {
+                users.push(currentUser);
+            } else {
+                // تحديث بيانات المدير الحالية
+                const adminIndex = users.findIndex(u => u.email === email);
+                users[adminIndex] = currentUser;
+            }
+            
+            // حفظ البيانات
+            saveLocalData();
             
             // تحديث الواجهة
             updateUI();
             
-            // تحميل بيانات السيرفر
-            await loadDataFromServer();
-            
             closeModal();
-            alert('🎉 مرحباً بك في لوحة تحكم الإدارة!');
+            showNotification('🎉 مرحباً بك في لوحة تحكم الإدارة!', 'success');
             return;
         }
         
         if (isLoginMode) {
-            // ========== 2. تسجيل الدخول العادي ==========
+            // ========== تسجيل الدخول ==========
             console.log('🔐 محاولة تسجيل دخول:', email);
             
-            // البحث أولاً في البيانات المحلية
-            let user = findUserInAllStorage(email, password);
+            // البحث في البيانات المحلية أولاً
+            let user = users.find(u => u.email === email && u.password === password);
             
             if (user) {
-                // ✅ وجد المستخدم في البيانات المحلية
-                console.log('✅ تسجيل دخول ناجح من البيانات المحلية:', user);
+                // ✅ نجاح الدخول من البيانات المحلية
+                console.log('✅ تسجيل دخول ناجح (محلي):', user.name);
                 currentUser = user;
                 isAdminLoggedIn = user.type === 'admin';
                 
-                // حفظ في التخزين المحلي
-                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
-                
-                // تحديث الواجهة
+                saveLocalData();
                 updateUI();
-                
                 closeModal();
-                alert(`🎉 مرحباً بعودتك ${user.name}!`);
+                showNotification(`🎉 مرحباً بعودتك ${user.name}!`, 'success');
                 return;
             }
             
-            // ⭐⭐ محاولة تسجيل الدخول من السيرفر
+            // ⭐⭐ محاولة الدخول من السيرفر
             console.log('🔄 محاولة تسجيل الدخول من السيرفر...');
             
             try {
@@ -722,66 +929,50 @@ async function handleAuth(event) {
                     password: password 
                 });
                 
-                console.log('استجابة السيرفر لتسجيل الدخول:', response);
-                
-                if (response.status === 200) {
+                if (response && response.status === 200) {
                     user = response.data;
-                    console.log('✅ تسجيل دخول ناجح من السيرفر:', user);
+                    console.log('✅ تسجيل دخول ناجح (سيرفر):', user.name);
                     
                     // إضافة كلمة المرور إلى بيانات المستخدم
                     user.password = password;
+                    user.source = 'server';
+                    user.synced = true;
                     
-                    // حفظ المستخدم في البيانات المحلية
-                    saveUserToLocalStorage(user);
+                    // إضافة المستخدم إلى البيانات المحلية
+                    const existingUserIndex = users.findIndex(u => u.email === email);
+                    if (existingUserIndex !== -1) {
+                        users[existingUserIndex] = user;
+                    } else {
+                        users.push(user);
+                    }
                     
                     currentUser = user;
                     isAdminLoggedIn = user.type === 'admin';
                     
-                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
-                    
+                    saveLocalData();
                     updateUI();
                     closeModal();
-                    alert(`🎉 مرحباً بعودتك ${user.name}!`);
+                    showNotification(`🎉 مرحباً بعودتك ${user.name}!`, 'success');
                     
-                } else if (response.status === 401) {
-                    // إذا كانت بيانات الدخول غير صحيحة
-                    alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة');
-                } else if (response.status === 404) {
-                    // إذا لم تكن ورقة المستخدمين موجودة
-                    alert('❌ لم يتم العثور على حساب بهذا البريد.\n\nتلميح: جرب إنشاء حساب جديد');
+                } else if (response && response.status === 401) {
+                    showNotification('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة', 'error');
                 } else {
-                    alert(`❌ خطأ في الخادم: ${response.message || 'حاول مرة أخرى'}`);
+                    showNotification('❌ خطأ في الخادم', 'error');
                 }
                 
             } catch (serverError) {
                 console.error('❌ خطأ في الاتصال بالسيرفر:', serverError);
-                
-                // الحل النهائي: البحث في جميع البيانات المحلية المخزنة
-                const foundUser = findUserInAllStorage(email, password);
-                
-                if (foundUser) {
-                    currentUser = foundUser;
-                    isAdminLoggedIn = foundUser.type === 'admin';
-                    
-                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(isAdminLoggedIn));
-                    
-                    updateUI();
-                    closeModal();
-                    alert(`🎉 مرحباً بعودتك ${foundUser.name}! (اتصال محلي)`);
-                } else {
-                    alert(`❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\n\nℹ️ إذا نسيت كلمة المرور، جرب إنشاء حساب جديد.`);
-                }
+                showNotification('❌ بيانات الدخول غير صحيحة أو مشكلة في الاتصال', 'error');
             }
             
         } else {
-            // ========== 3. إنشاء حساب جديد ==========
+            // ========== إنشاء حساب جديد ==========
             console.log('📝 محاولة إنشاء حساب:', { name, email });
             
-            // التحقق من عدم وجود الحساب في أي مكان
-            if (checkIfUserExistsAnywhere(email)) {
-                alert('⚠️ هذا البريد الإلكتروني مسجل مسبقاً');
+            // التحقق من عدم وجود الحساب محلياً
+            const localUser = users.find(u => u.email === email);
+            if (localUser) {
+                showNotification('⚠️ هذا البريد الإلكتروني مسجل مسبقاً', 'warning');
                 return;
             }
             
@@ -795,168 +986,73 @@ async function handleAuth(event) {
                     password: password 
                 });
                 
-                console.log('استجابة السيرفر للتسجيل:', response);
-                
-                if (response.status === 201) {
+                if (response && response.status === 201) {
                     const newUser = response.data;
-                    console.log('✅ تم إنشاء حساب جديد في السيرفر:', newUser);
+                    console.log('✅ تم إنشاء حساب جديد (سيرفر):', newUser.name);
                     
-                    // إضافة كلمة المرور إلى بيانات المستخدم
+                    // إضافة خصائص إضافية
                     newUser.password = password;
+                    newUser.source = 'server';
+                    newUser.synced = true;
                     
-                    // إضافة إلى البيانات المحلية
-                    saveUserToLocalStorage(newUser);
-                    
+                    // إضافة المستخدم محلياً
+                    users.push(newUser);
                     currentUser = newUser;
                     isAdminLoggedIn = false;
                     
-                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
-                    
-                    // تحديث الواجهة
+                    saveLocalData();
                     updateUI();
-                    
                     closeModal();
-                    alert(`🎉 تم إنشاء حسابك بنجاح ${name}!\n\n✅ يمكنك تسجيل الدخول الآن.\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
+                    showNotification(`🎉 تم إنشاء حسابك بنجاح ${name}!`, 'success');
                     
-                } else if (response.status === 409) {
-                    alert('⚠️ هذا البريد الإلكتروني مسجل مسبقاً في السيرفر');
+                } else if (response && response.status === 409) {
+                    showNotification('⚠️ هذا البريد الإلكتروني مسجل مسبقاً', 'warning');
                 } else {
-                    alert(`❌ ${response.message || 'فشل إنشاء الحساب في السيرفر'}`);
+                    showNotification('❌ فشل إنشاء الحساب', 'error');
                 }
                 
             } catch (serverError) {
                 console.error('❌ خطأ في السيرفر، إنشاء حساب محلي:', serverError);
                 
-                // ⭐⭐ حل بديل: إنشاء حساب محلي
-                if (confirm('⚠️ مشكلة في الاتصال بالسيرفر. هل تريد إنشاء حساب محلياً؟\n\n(البيانات ستكون محلية فقط حتى يتم الاتصال بالسيرفر)')) {
-                    
-                    const newId = generateNewUserId();
-                    const newUser = {
-                        id: String(newId),
-                        name: name,
-                        email: email,
-                        password: password,
-                        type: 'user',
-                        joinDate: new Date().toISOString().split('T')[0]
-                    };
-                    
-                    // إضافة إلى البيانات المحلية
-                    saveUserToLocalStorage(newUser);
-                    
-                    currentUser = newUser;
-                    isAdminLoggedIn = false;
-                    
-                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                    localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
-                    
-                    // تحديث الواجهة
-                    updateUI();
-                    
-                    closeModal();
-                    alert(`🎉 تم إنشاء حسابك بنجاح ${name}! (محلياً)\n\n✅ يمكنك تسجيل الدخول الآن باستخدام نفس البيانات.\n\n⚠️ ملاحظة: تواصل مع الإدارة عبر الإنستجرام لطلب ترقية حسابك إلى تاجر.`);
-                }
+                // ⭐⭐ إنشاء حساب محلي
+                const newId = 'user_' + Date.now();
+                const newUser = {
+                    id: newId,
+                    name: name,
+                    email: email,
+                    password: password,
+                    type: 'user',
+                    joinDate: new Date().toISOString().split('T')[0],
+                    source: 'local',
+                    synced: false
+                };
+                
+                users.push(newUser);
+                currentUser = newUser;
+                isAdminLoggedIn = false;
+                
+                saveLocalData();
+                updateUI();
+                closeModal();
+                showNotification(`🎉 تم إنشاء حسابك بنجاح ${name}! (محلياً)`, 'success');
             }
         }
         
     } catch (error) {
         console.error('❌ خطأ غير متوقع في المصادقة:', error);
-        alert('⚠️ حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
+        showNotification('⚠️ حدث خطأ غير متوقع', 'error');
     }
 }
 
-// ==================== وظائف مساعدة للمصادقة المحسنة ====================
-
-// البحث عن مستخدم في جميع البيانات المخزنة
-function findUserInAllStorage(email, password) {
-    // البحث في currentUser أولاً
-    if (currentUser && currentUser.email === email && currentUser.password === password) {
-        return currentUser;
-    }
-    
-    // البحث في users المحلية
-    let user = users.find(u => u.email === email && u.password === password);
-    if (user) return user;
-    
-    // البحث في localStorage
-    try {
-        const storedUsers = localStorage.getItem('webaidea_users');
-        if (storedUsers) {
-            const allUsers = JSON.parse(storedUsers);
-            user = allUsers.find(u => u.email === email && u.password === password);
-            if (user) return user;
-        }
-    } catch (error) {
-        console.error('❌ خطأ في قراءة localStorage:', error);
-    }
-    
-    return null;
-}
-
-// التحقق من وجود المستخدم في أي مكان
-function checkIfUserExistsAnywhere(email) {
-    // التحقق في users المحلية
-    if (users.some(u => u.email === email)) return true;
-    
-    // التحقق في localStorage
-    try {
-        const storedUsers = localStorage.getItem('webaidea_users');
-        if (storedUsers) {
-            const allUsers = JSON.parse(storedUsers);
-            return allUsers.some(u => u.email === email);
-        }
-    } catch (error) {
-        console.error('❌ خطأ في قراءة localStorage:', error);
-    }
-    
-    return false;
-}
-
-// حفظ مستخدم في localStorage
-function saveUserToLocalStorage(user) {
-    try {
-        const storedUsers = localStorage.getItem('webaidea_users');
-        let allUsers = storedUsers ? JSON.parse(storedUsers) : [];
-        
-        // إزالة أي نسخة مكررة
-        allUsers = allUsers.filter(u => u.email !== user.email);
-        
-        // إضافة المستخدم الجديد
-        allUsers.push(user);
-        
-        localStorage.setItem('webaidea_users', JSON.stringify(allUsers));
-        users = allUsers; // تحديث المصفوفة الحالية
-        
-        return allUsers;
-    } catch (error) {
-        console.error('❌ خطأ في حفظ المستخدم:', error);
-        return [];
-    }
-}
-
-// إنشاء ID جديد
-function generateNewUserId() {
-    try {
-        const storedUsers = localStorage.getItem('webaidea_users');
-        if (!storedUsers) return 100;
-        
-        const allUsers = JSON.parse(storedUsers);
-        if (allUsers.length === 0) return 100;
-        
-        const maxId = Math.max(...allUsers.map(u => parseInt(u.id) || 0));
-        return maxId + 1;
-    } catch (error) {
-        return Date.now();
-    }
-}
-
-// دالة مساعدة للاتصال بالAPI
+// ========== دوال الاتصال بالAPI ==========
 async function fetchData(action, params = {}) {
     const url = new URL(API_URL);
     url.searchParams.append('action', action);
     
     for (const key in params) {
-        url.searchParams.append(key, params[key]);
+        if (params[key] !== undefined && params[key] !== null) {
+            url.searchParams.append(key, params[key]);
+        }
     }
     
     try {
@@ -972,6 +1068,7 @@ async function fetchData(action, params = {}) {
         }
         
         const data = await response.json();
+        console.log(`✅ استجابة API: ${action}`, data);
         return data;
         
     } catch (error) {
@@ -980,255 +1077,13 @@ async function fetchData(action, params = {}) {
     }
 }
 
-// دالة مساعدة للاتصال بالAPI (POST)
 async function postData(action, params = {}) {
     return fetchData(action, params);
 }
 
-// ==================== وظائف المنتجات ====================
+// ========== دوال الإدارة ==========
 
-// عرض المنتجات في الصفحة الرئيسية
-function renderProducts() {
-    const container = document.getElementById('productsContainer');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    // الحصول على أحدث البيانات من التخزين المحلي
-    const latestProducts = JSON.parse(localStorage.getItem('webaidea_products')) || products;
-    
-    if (latestProducts.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #666;">
-                <i class="fas fa-box-open" style="font-size: 4rem; margin-bottom: 1rem; color: #ccc;"></i>
-                <h3>لا توجد منتجات حالياً</h3>
-                <p>كن أول من يعرض منتجاته على المنصة!</p>
-                ${!currentUser ? `
-                    <a href="javascript:void(0);" class="btn btn-primary" onclick="openAuthModal()" style="margin-top: 1rem;">
-                        <i class="fas fa-user-plus"></i> سجل الآن لعرض منتجاتك
-                    </a>
-                ` : ''}
-            </div>
-        `;
-        return;
-    }
-    
-    // فرز المنتجات: المميزة أولاً مع ترتيب عكسي للتاريخ (الأحدث أولاً)
-    const featuredProducts = latestProducts
-        .filter(p => p.featured)
-        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-    
-    const regularProducts = latestProducts
-        .filter(p => !p.featured)
-        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-    
-    const allProducts = [...featuredProducts, ...regularProducts];
-    
-    allProducts.forEach(product => {
-        const merchant = users.find(u => u.id == product.merchantId);
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        
-        // إذا كان المنتج مميزاً
-        if (product.featured) {
-            card.style.border = '2px solid #ffb300';
-            card.style.position = 'relative';
-            card.innerHTML = `<div class="special-badge"><i class="fas fa-crown"></i> مميز</div>`;
-        }
-        
-        // إضافة علامة "محلي" للمنتجات غير المزامنة
-        const localBadge = product.source === 'local' && !product.synced ? 
-            `<div style="position: absolute; top: 10px; left: 10px; background: #ff9800; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 1;">
-                <i class="fas fa-laptop-house"></i> محلي
-            </div>` : '';
-        
-        card.innerHTML += localBadge;
-        
-        card.innerHTML += `
-            <div class="product-image">
-                <img src="${product.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
-                     alt="${product.title || 'منتج'}" 
-                     loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading'">
-                ${product.featured ? `<div class="featured-overlay"><i class="fas fa-star"></i> مميز</div>` : ''}
-            </div>
-            <div class="product-info">
-                <h3 class="product-title">${product.title || 'بدون عنوان'}</h3>
-                <p class="product-description">
-                    ${(product.description || '').substring(0, 80)}
-                    ${product.description && product.description.length > 80 ? '...' : ''}
-                </p>
-                <div class="product-meta">
-                    <div>
-                        <div class="product-price">${product.price || 0} ريال</div>
-                        <div class="product-merchant">
-                            <i class="fas fa-user"></i> ${merchant ? merchant.name : 'تاجر'}
-                        </div>
-                    </div>
-                    <div class="product-date" style="font-size: 0.8rem; color: #666;">
-                        <i class="fas fa-calendar"></i> ${product.date || ''}
-                    </div>
-                </div>
-                <button class="view-btn" onclick="showProductDetail(${product.id})">
-                    <i class="fas fa-eye"></i> عرض التفاصيل
-                </button>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-// عرض تفاصيل المنتج
-function showProductDetail(productId) {
-    // البحث عن المنتج في البيانات المحلية أولاً
-    const latestProducts = JSON.parse(localStorage.getItem('webaidea_products')) || products;
-    const product = latestProducts.find(p => p.id == productId);
-    
-    if (!product) {
-        alert('❌ المنتج غير موجود');
-        return;
-    }
-    
-    const merchant = users.find(u => u.id == product.merchantId);
-    const detailBody = document.getElementById('detailBody');
-    
-    detailBody.innerHTML = `
-        <div class="detail-header">
-            <div class="detail-image">
-                <img src="${product.image || 'https://via.placeholder.com/400x300?text=No+Image'}" 
-                     alt="${product.title}"
-                     onerror="this.src='https://via.placeholder.com/400x300?text=Error+Loading'">
-            </div>
-            <div class="detail-info">
-                <h2 class="detail-title">${product.title || 'بدون عنوان'}</h2>
-                <div class="detail-price">${product.price || 0} ريال عماني</div>
-                
-                ${product.featured ? `
-                    <div class="featured-badge">
-                        <i class="fas fa-crown"></i> إعلان مميز
-                    </div>
-                ` : ''}
-                
-                ${product.source === 'local' && !product.synced ? `
-                    <div class="featured-badge" style="background: #ff9800;">
-                        <i class="fas fa-laptop-house"></i> محفوظ محلياً
-                    </div>
-                ` : ''}
-                
-                <div class="detail-merchant">
-                    <i class="fas fa-user-tie"></i> 
-                    <strong>التاجر:</strong> ${merchant ? merchant.name : 'غير معروف'}
-                </div>
-                
-                <div class="detail-contact">
-                    <i class="fas fa-phone"></i> 
-                    <strong>رقم التواصل:</strong> ${product.contact || 'غير متوفر'}
-                </div>
-                
-                <div class="detail-date">
-                    <i class="fas fa-calendar"></i> 
-                    <strong>تاريخ النشر:</strong> ${product.date || 'غير معروف'}
-                </div>
-            </div>
-        </div>
-        
-        <div class="detail-description">
-            <h3><i class="fas fa-align-right"></i> وصف المنتج</h3>
-            <p>${product.description || 'لا يوجد وصف للمنتج'}</p>
-        </div>
-        
-        <div class="detail-actions">
-            <button class="btn btn-secondary" onclick="closeDetailModal()">
-                <i class="fas fa-times"></i> إغلاق
-            </button>
-            
-            ${currentUser && currentUser.type === 'admin' ? `
-                <button class="btn btn-danger" onclick="deleteProduct(${product.id})">
-                    <i class="fas fa-trash"></i> حذف المنتج
-                </button>
-            ` : ''}
-        </div>
-    `;
-    
-    document.getElementById('productDetailModal').style.display = 'flex';
-}
-
-// إغلاق نافذة تفاصيل المنتج
-function closeDetailModal() {
-    document.getElementById('productDetailModal').style.display = 'none';
-}
-
-// ==================== وظائف رفع الصور ====================
-
-// معالجة رفع الصور
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // التحقق من نوع الملف
-    if (!file.type.match('image.*')) {
-        alert('⚠️ يرجى اختيار صورة فقط');
-        return;
-    }
-    
-    // التحقق من حجم الملف (2MB كحد أقصى)
-    if (file.size > 2 * 1024 * 1024) {
-        alert('⚠️ حجم الصورة كبير جداً. الحد الأقصى 2MB');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        selectedImageData = e.target.result;
-        
-        // عرض معاينة الصورة
-        const preview = document.getElementById('imagePreview');
-        if (preview) {
-            preview.innerHTML = `
-                <img src="${selectedImageData}" 
-                     alt="معاينة الصورة" 
-                     style="max-width: 100%; max-height: 200px; border-radius: 8px;">
-                <p style="color: #666; margin-top: 10px; font-size: 0.9rem;">
-                    <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
-                    تم اختيار الصورة (${Math.round(file.size / 1024)} KB)
-                </p>
-            `;
-        }
-    };
-    
-    reader.readAsDataURL(file);
-}
-
-// رفع الصورة إلى Google Drive
-async function uploadImageToDrive() {
-    if (!selectedImageData) {
-        alert('⚠️ يرجى اختيار صورة أولاً');
-        return null;
-    }
-    
-    try {
-        // استخدام Unsplash images كبديل
-        const unsplashImages = [
-            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
-        ];
-        
-        const randomImage = unsplashImages[Math.floor(Math.random() * unsplashImages.length)];
-        
-        console.log('✅ استخدام صورة Unsplash:', randomImage);
-        return randomImage;
-        
-    } catch (error) {
-        console.error('❌ خطأ في معالجة الصورة:', error);
-        return 'https://via.placeholder.com/600x400?text=Webaidea+Product';
-    }
-}
-
-// ==================== وظائف الإدارة ====================
-
-// دالة جديدة: عرض لوحة الإدارة
+// عرض لوحة الإدارة
 function showAdminPanel() {
     const adminPanel = document.getElementById('adminPanel');
     if (!adminPanel) return;
@@ -1253,7 +1108,7 @@ function showAdminPanel() {
     populateMerchantSelect();
 }
 
-// دالة جديدة: إخفاء لوحة الإدارة وعرض الموقع العادي
+// إخفاء لوحة الإدارة
 function showMainSite() {
     const adminPanel = document.getElementById('adminPanel');
     if (adminPanel) adminPanel.style.display = 'none';
@@ -1270,7 +1125,7 @@ function showMainSite() {
     if (navbar) navbar.style.display = 'block';
 }
 
-// العودة للقائمة الرئيسية (زر الرجوع الجديد)
+// العودة للقائمة الرئيسية
 function goToMainSite() {
     if (confirm('هل تريد العودة للقائمة الرئيسية؟')) {
         logoutAdmin();
@@ -1281,22 +1136,21 @@ function goToMainSite() {
 function logoutAdmin() {
     if (confirm('هل تريد تسجيل الخروج من لوحة الإدارة؟')) {
         isAdminLoggedIn = false;
-        localStorage.setItem('webaidea_adminLoggedIn', JSON.stringify(false));
         
-        // إعادة تعيين حالة المستخدم إذا كان مديراً
+        // إذا كان المدير هو المستخدم الحالي، تسجيل الخروج بالكامل
         if (currentUser && currentUser.type === 'admin') {
             currentUser = null;
-            localStorage.removeItem('webaidea_currentUser');
         }
         
+        saveLocalData();
         showMainSite();
         updateUI();
         
-        alert('✅ تم تسجيل الخروج من لوحة الإدارة.');
+        showNotification('✅ تم تسجيل الخروج من لوحة الإدارة', 'success');
     }
 }
 
-// تبديل علامات التبويب في لوحة الإدارة
+// تبديل علامات التبويب
 function openAdminTab(evt, tabName) {
     // إخفاء جميع محتويات التبويبات
     const tabContents = document.getElementsByClassName('tab-content');
@@ -1310,12 +1164,12 @@ function openAdminTab(evt, tabName) {
         tabLinks[i].classList.remove('active');
     }
     
-    // عرض محتوى التبويب المحدد وإضافة النشاط للزر
+    // عرض محتوى التبويب المحدد
     document.getElementById(tabName).classList.add('active-tab');
     evt.currentTarget.classList.add('active');
 }
 
-// ==================== جداول الإدارة ====================
+// ========== جداول الإدارة ==========
 
 // عرض جدول التجار
 function renderMerchantsTable() {
@@ -1339,7 +1193,7 @@ function renderMerchantsTable() {
     tbody.innerHTML = '';
     
     merchants.forEach(user => {
-        const userAds = products.filter(p => p.merchantId == user.id);
+        const userAds = products.filter(p => p.merchantId == user.id || p.merchantId == user.email);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${user.name || 'غير معروف'}</td>
@@ -1353,7 +1207,7 @@ function renderMerchantsTable() {
                             <i class="fas fa-user-times"></i>
                         </button>
                     ` : ''}
-                    <button class="action-btn btn-view" onclick="viewUserAds('${user.id}')" title="عرض إعلانات التاجر">
+                    <button class="action-btn btn-view" onclick="viewUserAds('${user.email}')" title="عرض إعلانات التاجر">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
@@ -1363,7 +1217,7 @@ function renderMerchantsTable() {
     });
 }
 
-// عرض جدول جميع الحسابات
+// عرض جدول الحسابات
 function renderAccountsTable() {
     const tbody = document.querySelector('#accountsTable tbody');
     if (!tbody) return;
@@ -1398,11 +1252,8 @@ function renderAccountsTable() {
             <td>
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                     ${user.type === 'user' ? `
-                        <button class="action-btn btn-approve" onclick="makeMerchant('${user.id}')" title="ترقية إلى تاجر">
+                        <button class="action-btn btn-approve" onclick="makeMerchant('${user.email}')" title="ترقية إلى تاجر">
                             <i class="fas fa-user-check"></i> جعله تاجر
-                        </button>
-                        <button class="action-btn btn-secondary" onclick="makeMerchantLocal('${user.id}')" title="ترقية محلياً">
-                            <i class="fas fa-laptop-house"></i> محلياً
                         </button>
                     ` : user.type === 'merchant' ? 
                         '<span style="color:#2e7d32; padding: 5px 10px; background: #e8f5e9; border-radius: 4px;">تاجر بالفعل</span>' :
@@ -1420,10 +1271,7 @@ function renderAdsTable() {
     const tbody = document.querySelector('#adsTable tbody');
     if (!tbody) return;
     
-    // الحصول على أحدث البيانات من التخزين المحلي
-    const latestProducts = JSON.parse(localStorage.getItem('webaidea_products')) || products;
-    
-    if (latestProducts.length === 0) {
+    if (products.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
@@ -1437,15 +1285,9 @@ function renderAdsTable() {
     
     tbody.innerHTML = '';
     
-    latestProducts.forEach(product => {
-        const merchant = users.find(u => u.id == product.merchantId);
+    products.forEach(product => {
+        const merchant = users.find(u => u.id == product.merchantId || u.email === product.merchantId);
         const row = document.createElement('tr');
-        
-        // إضافة علامة للمنتجات المحلية
-        const localBadge = product.source === 'local' && !product.synced ? 
-            `<span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; margin-right: 5px;">
-                <i class="fas fa-laptop-house"></i> محلي
-            </span>` : '';
         
         row.innerHTML = `
             <td>
@@ -1454,26 +1296,21 @@ function renderAdsTable() {
                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
                      onerror="this.src='https://via.placeholder.com/50'">
             </td>
-            <td>${localBadge} ${product.title || 'بدون عنوان'}</td>
+            <td>${product.title || 'بدون عنوان'}</td>
             <td>${product.price || 0}</td>
             <td>${merchant ? merchant.name : 'غير معروف'}</td>
             <td>${product.date || 'غير معروف'}</td>
             <td>
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                    <button class="action-btn btn-view" onclick="showProductDetail(${product.id})">
+                    <button class="action-btn btn-view" onclick="showProductDetail('${product.id}')">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="action-btn btn-remove" onclick="removeAd(${product.id})">
+                    <button class="action-btn btn-remove" onclick="removeAd('${product.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                     ${!product.featured ? `
-                        <button class="action-btn btn-approve" onclick="makeFeatured(${product.id})" title="جعله إعلان مميز">
+                        <button class="action-btn btn-approve" onclick="makeFeatured('${product.id}')" title="جعله إعلان مميز">
                             <i class="fas fa-crown"></i>
-                        </button>
-                    ` : ''}
-                    ${product.source === 'local' && !product.synced ? `
-                        <button class="action-btn btn-secondary" onclick="syncSingleProduct('${product.id}')" title="مزامنة مع السيرفر">
-                            <i class="fas fa-sync-alt"></i>
                         </button>
                     ` : ''}
                 </div>
@@ -1483,7 +1320,7 @@ function renderAdsTable() {
     });
 }
 
-// ملء قائمة التجار في نموذج نشر الإعلان
+// ملء قائمة التجار
 function populateMerchantSelect() {
     const select = document.getElementById('adMerchant');
     if (!select) return;
@@ -1499,403 +1336,13 @@ function populateMerchantSelect() {
     });
 }
 
-// البحث في الجداول
-function searchTable(tableId, query) {
-    const table = document.getElementById(tableId);
-    if (!table || !query) return;
-    
-    const rows = table.getElementsByTagName('tr');
-    let visibleCount = 0;
-    
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
-        let found = false;
-        
-        for (let j = 0; j < cells.length; j++) {
-            const cellText = cells[j].textContent || cells[j].innerText;
-            if (cellText.toLowerCase().includes(query.toLowerCase())) {
-                found = true;
-                break;
-            }
-        }
-        
-        rows[i].style.display = found ? '' : 'none';
-        if (found) visibleCount++;
-    }
-    
-    // إذا لم توجد نتائج، عرض رسالة
-    if (visibleCount === 0 && rows.length > 1) {
-        const tbody = table.querySelector('tbody');
-        if (tbody && !tbody.querySelector('.no-results')) {
-            const row = document.createElement('tr');
-            row.className = 'no-results';
-            row.innerHTML = `
-                <td colspan="10" style="text-align: center; padding: 2rem; color: #666;">
-                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; color: #ccc;"></i>
-                    <p>لا توجد نتائج تطابق "${query}"</p>
-                </td>
-            `;
-            tbody.appendChild(row);
-        }
-    } else {
-        const noResults = table.querySelector('.no-results');
-        if (noResults) noResults.remove();
-    }
-}
+// ========== دوال المزامنة ==========
 
-// ==================== إجراءات الإدارة ====================
-
-// ترقية مستخدم إلى تاجر (مع السيرفر)
-async function makeMerchant(userId) {
-    if (!confirm('هل تريد حقًا ترقية هذا المستخدم إلى تاجر؟')) return;
-    
-    try {
-        console.log('🔄 محاولة ترقية المستخدم:', userId);
-        
-        const response = await postData('updateUserType', {
-            adminEmail: 'msdfrrt@gmail.com',
-            adminPassword: 'Shabib95873061@99',
-            userId: String(userId) // إرسال ID كنص
-        });
-        
-        console.log('استجابة السيرفر:', response);
-        
-        if (response.status === 200) {
-            // تحديث البيانات المحلية
-            const user = users.find(u => u.id == userId);
-            if (user) {
-                user.type = 'merchant';
-                localStorage.setItem('webaidea_users', JSON.stringify(users));
-                
-                // تحديث الجداول
-                renderMerchantsTable();
-                renderAccountsTable();
-                populateMerchantSelect();
-                
-                // إذا كان المستخدم مسجل دخوله، تحديث واجهته
-                if (currentUser && currentUser.id == userId) {
-                    currentUser.type = 'merchant';
-                    localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                    updateUI();
-                    
-                    alert(`✅ تم ترقية ${user.name} إلى تاجر بنجاح!\n\n🎉 يمكنك الآن نشر إعلاناتك.`);
-                } else {
-                    alert(`✅ تم ترقية المستخدم إلى تاجر بنجاح.`);
-                }
-            } else {
-                // إذا لم يكن المستخدم في البيانات المحلية، جلب البيانات من السيرفر
-                console.log('المستخدم غير موجود محلياً، جاري تحميل البيانات من السيرفر...');
-                await loadDataFromServer();
-                alert('✅ تم ترقية المستخدم إلى تاجر. جاري تحديث البيانات...');
-            }
-        } else {
-            alert(`❌ ${response.message || 'فشلت العملية'}\n\nيمكنك ترقيته محلياً في الوقت الحالي.`);
-            
-            // بديل: تحديث البيانات المحلية
-            const user = users.find(u => u.id == userId);
-            if (user && user.type === 'user') {
-                user.type = 'merchant';
-                localStorage.setItem('webaidea_users', JSON.stringify(users));
-                
-                renderMerchantsTable();
-                renderAccountsTable();
-                populateMerchantSelect();
-                
-                alert('✅ تم ترقيته محلياً. البيانات ستنعكس عند تحديث السيرفر.');
-            }
-        }
-    } catch (error) {
-        console.error('❌ خطأ في ترقية المستخدم:', error);
-        
-        // بديل: تحديث البيانات المحلية
-        const user = users.find(u => u.id == userId);
-        if (user && user.type === 'user') {
-            if (confirm('⚠️ خطأ في الاتصال بالسيرفر. هل تريد ترقيته محلياً؟')) {
-                user.type = 'merchant';
-                localStorage.setItem('webaidea_users', JSON.stringify(users));
-                
-                renderMerchantsTable();
-                renderAccountsTable();
-                populateMerchantSelect();
-                
-                alert('✅ تم ترقيته محلياً. البيانات ستنعكس عند تحديث السيرفر.');
-            }
-        } else {
-            alert('⚠️ حدث خطأ أثناء ترقية المستخدم');
-        }
-    }
-}
-
-// دالة جديدة: ترقية مستخدم محلياً (بدون سيرفر)
-function makeMerchantLocal(userId) {
-    const user = users.find(u => u.id == userId);
-    if (!user) {
-        alert('❌ المستخدم غير موجود في البيانات المحلية');
-        return;
-    }
-    
-    if (user.type === 'user') {
-        user.type = 'merchant';
-        localStorage.setItem('webaidea_users', JSON.stringify(users));
-        
-        // تحديث الجداول
-        renderMerchantsTable();
-        renderAccountsTable();
-        populateMerchantSelect();
-        
-        // إذا كان المستخدم مسجل دخوله، تحديث واجهته
-        if (currentUser && currentUser.id == userId) {
-            currentUser.type = 'merchant';
-            localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-            updateUI();
-            
-            // عرض زر نشر الإعلان للتاجر
-            showMerchantPostButton();
-            
-            alert(`✅ تم ترقية ${user.name} إلى تاجر بنجاح!\n\n🎉 يمكنك الآن نشر إعلاناتك من الزر الموجود في أسفل الصفحة.`);
-        } else {
-            alert(`✅ تم ترقية ${user.name} إلى تاجر بنجاح.`);
-        }
-    } else if (user.type === 'merchant') {
-        alert('ℹ️ هذا المستخدم تاجر بالفعل.');
-    } else if (user.type === 'admin') {
-        alert('ℹ️ هذا المستخدم مدير النظام.');
-    }
-}
-
-// إلغاء صلاحية التاجر
-async function removeMerchant(userId) {
-    if (!confirm('هل تريد إلغاء صلاحية التاجر عن هذا المستخدم؟')) return;
-    
-    try {
-        const user = users.find(u => u.id == userId);
-        if (user && user.type === 'merchant') {
-            user.type = 'user';
-            localStorage.setItem('webaidea_users', JSON.stringify(users));
-            
-            // تحديث الجداول
-            renderMerchantsTable();
-            renderAccountsTable();
-            populateMerchantSelect();
-            
-            // إذا كان المستخدم مسجل دخوله، تحديث واجهته
-            if (currentUser && currentUser.id == userId) {
-                currentUser.type = 'user';
-                localStorage.setItem('webaidea_currentUser', JSON.stringify(currentUser));
-                updateUI();
-                
-                // إزالة زر نشر الإعلان
-                const postBtn = document.getElementById('merchantPostBtn');
-                if (postBtn) postBtn.remove();
-                
-                alert(`✅ تم إلغاء صلاحية التاجر عن ${user.name}.`);
-            } else {
-                alert('✅ تم إلغاء صلاحية التاجر.');
-            }
-        }
-    } catch (error) {
-        console.error('❌ خطأ في إلغاء صلاحية التاجر:', error);
-        alert('⚠️ حدث خطأ أثناء العملية');
-    }
-}
-
-// نشر إعلان جديد من قبل الإدارة (مميز)
-async function postAdminAd(event) {
-    event.preventDefault();
-    
-    const title = document.getElementById('adTitle').value.trim();
-    const price = document.getElementById('adPrice').value;
-    const description = document.getElementById('adDescription').value.trim();
-    const contact = document.getElementById('adContact').value.trim();
-    const merchantId = document.getElementById('adMerchant').value;
-    
-    // التحقق من البيانات
-    if (!title || !price || !description || !contact || !merchantId) {
-        alert('⚠️ يرجى ملء جميع الحقول المطلوبة');
-        return;
-    }
-    
-    if (!selectedImageData) {
-        alert('⚠️ يرجى اختيار صورة للمنتج');
-        return;
-    }
-    
-    if (!confirm('هل تريد نشر هذا الإعلان المميز؟')) return;
-    
-    try {
-        // 1. رفع الصورة
-        const imageUrl = await uploadImageToDrive();
-        if (!imageUrl) {
-            alert('❌ فشل معالجة الصورة');
-            return;
-        }
-        
-        // 2. نشر المنتج
-        const response = await postData('addProduct', {
-            title: title,
-            price: parseFloat(price),
-            description: description,
-            image: imageUrl,
-            contact: contact,
-            merchantId: merchantId,
-            featured: 'true' // إعلان مميز
-        });
-        
-        if (response.status === 201) {
-            // إضافة المنتج إلى البيانات المحلية
-            const newProduct = {
-                id: response.data.productId || Date.now(),
-                title: title,
-                price: parseFloat(price),
-                description: description,
-                image: imageUrl,
-                contact: contact,
-                merchantId: merchantId,
-                featured: true, // إعلان مميز
-                date: new Date().toISOString().split('T')[0],
-                source: 'server',
-                synced: true
-            };
-            
-            products.push(newProduct);
-            localStorage.setItem('webaidea_products', JSON.stringify(products));
-            
-            // إعادة تعيين النموذج
-            document.getElementById('adminAdForm').reset();
-            selectedImageData = null;
-            
-            const preview = document.getElementById('imagePreview');
-            if (preview) {
-                preview.innerHTML = `
-                    <i class="fas fa-image" style="font-size: 3rem; color: #ccc;"></i>
-                    <p style="color: #999; margin-top: 10px;">لم يتم اختيار صورة</p>
-                `;
-            }
-            
-            // تحديث الجداول والعروض
-            renderAdsTable();
-            renderProducts();
-            
-            alert('🎉 تم نشر الإعلان المميز بنجاح!\n\n⭐ سيظهر في بداية الصفحة.');
-        } else {
-            // إذا فشل الاتصال بالسيرفر، أضف المنتج محلياً
-            const newProduct = {
-                id: 'local_admin_' + Date.now(),
-                title: title,
-                price: parseFloat(price),
-                description: description,
-                image: imageUrl,
-                contact: contact,
-                merchantId: merchantId,
-                featured: true, // إعلان مميز
-                date: new Date().toISOString().split('T')[0],
-                source: 'local',
-                synced: false
-            };
-            
-            products.push(newProduct);
-            localStorage.setItem('webaidea_products', JSON.stringify(products));
-            
-            // إعادة تعيين النموذج
-            document.getElementById('adminAdForm').reset();
-            selectedImageData = null;
-            
-            // تحديث الجداول والعروض
-            renderAdsTable();
-            renderProducts();
-            
-            alert('🎉 تم نشر الإعلان المميز بنجاح (محلياً)!\n\n⭐ سيظهر في بداية الصفحة.');
-        }
-    } catch (error) {
-        console.error('❌ خطأ في نشر الإعلان:', error);
-        alert('⚠️ حدث خطأ أثناء نشر الإعلان');
-    }
-}
-
-// حذف إعلان
-async function removeAd(productId) {
-    if (!confirm('هل تريد حذف هذا الإعلان؟')) return;
-    
-    try {
-        // حذف من البيانات المحلية أولاً
-        products = products.filter(p => p.id != productId);
-        localStorage.setItem('webaidea_products', JSON.stringify(products));
-        
-        // محاولة حذف من السيرفر إذا كان منتجاً من السيرفر
-        const product = products.find(p => p.id == productId);
-        if (product && product.source === 'server') {
-            const response = await postData('deleteProduct', {
-                adminEmail: 'msdfrrt@gmail.com',
-                adminPassword: 'Shabib95873061@99',
-                productId: productId
-            });
-            
-            if (response.status === 200) {
-                console.log('✅ تم حذف المنتج من السيرفر');
-            }
-        }
-        
-        // تحديث الجداول والعروض
-        renderAdsTable();
-        renderProducts();
-        
-        alert('✅ تم حذف الإعلان بنجاح.');
-    } catch (error) {
-        console.error('❌ خطأ في حذف الإعلان:', error);
-        alert('⚠️ تم حذف الإعلان محلياً فقط');
-    }
-}
-
-// جعل الإعلان مميزاً
-async function makeFeatured(productId) {
-    if (!confirm('هل تريد جعل هذا الإعلان مميزاً؟')) return;
-    
-    const product = products.find(p => p.id == productId);
-    if (product) {
-        product.featured = true;
-        localStorage.setItem('webaidea_products', JSON.stringify(products));
-        
-        renderAdsTable();
-        renderProducts();
-        alert('✅ تم جعل الإعلان مميزاً.\n\n⭐ سيظهر في بداية الصفحة.');
-    }
-}
-
-// حذف منتج
-async function deleteProduct(productId) {
-    if (!confirm('هل تريد حذف هذا المنتج؟')) return;
-    await removeAd(productId);
-    closeDetailModal();
-}
-
-// عرض إعلانات تاجر معين
-function viewUserAds(userId) {
-    const userAds = products.filter(p => p.merchantId == userId);
-    const user = users.find(u => u.id == userId);
-    
-    if (!user) {
-        alert('❌ التاجر غير موجود');
-        return;
-    }
-    
-    if (userAds.length > 0) {
-        let message = `📋 إعلانات ${user.name} (${userAds.length} إعلان):\n\n`;
-        userAds.forEach((ad, index) => {
-            message += `${index + 1}. ${ad.title} - ${ad.price} ريال ${ad.featured ? '⭐ مميز' : ''} ${ad.source === 'local' ? '📱 محلي' : ''}\n`;
-        });
-        alert(message);
-    } else {
-        alert(`ℹ️ ليس لدى ${user.name} أي إعلانات منشورة.`);
-    }
-}
-
-// ==================== وظائف المزامنة ====================
-
-// إضافة زر لتحديث البيانات يدوياً
+// إضافة زر مزامنة
 function addSyncButton() {
-    // إزالة الزر السابق إذا كان موجوداً
-    const oldSyncBtn = document.getElementById('syncDataBtn');
-    if (oldSyncBtn) oldSyncBtn.remove();
+    // إزالة الزر السابق
+    const oldBtn = document.getElementById('syncDataBtn');
+    if (oldBtn) oldBtn.remove();
     
     // إنشاء زر جديد
     const syncBtn = document.createElement('button');
@@ -1926,9 +1373,9 @@ function addSyncButton() {
     document.body.appendChild(syncBtn);
 }
 
-// دالة المزامنة اليدوية
+// مزامنة يدوية
 async function syncDataManually() {
-    if (confirm('هل تريد مزامنة البيانات مع السيرفر؟\n\nسيتم دمج البيانات المحلية مع بيانات السيرفر.')) {
+    if (confirm('هل تريد مزامنة البيانات مع السيرفر؟\n\nسيتم دمج البيانات المحلية مع السيرفر.')) {
         try {
             const syncBtn = document.getElementById('syncDataBtn');
             if (syncBtn) {
@@ -1936,22 +1383,26 @@ async function syncDataManually() {
                 syncBtn.disabled = true;
             }
             
-            await loadDataFromServer();
-            renderProducts();
+            const success = await loadDataFromServer();
             
             if (syncBtn) {
-                syncBtn.innerHTML = `<i class="fas fa-check"></i> تمت المزامنة`;
+                if (success) {
+                    syncBtn.innerHTML = `<i class="fas fa-check"></i> تمت المزامنة`;
+                    showNotification('✅ تمت مزامنة البيانات بنجاح', 'success');
+                } else {
+                    syncBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> فشلت المزامنة`;
+                    showNotification('⚠️ فشلت مزامنة البيانات', 'warning');
+                }
+                
                 setTimeout(() => {
                     syncBtn.innerHTML = `<i class="fas fa-sync-alt"></i> مزامنة`;
                     syncBtn.disabled = false;
                 }, 2000);
             }
             
-            alert('✅ تمت مزامنة البيانات بنجاح!');
-            
         } catch (error) {
             console.error('❌ خطأ في المزامنة:', error);
-            alert('⚠️ حدث خطأ أثناء مزامنة البيانات');
+            showNotification('❌ حدث خطأ أثناء مزامنة البيانات', 'error');
             
             const syncBtn = document.getElementById('syncDataBtn');
             if (syncBtn) {
@@ -1962,61 +1413,11 @@ async function syncDataManually() {
     }
 }
 
-// دالة جديدة: مزامنة منتج واحد مع السيرفر
-async function syncSingleProduct(productId) {
-    const product = products.find(p => p.id == productId);
-    if (!product) {
-        alert('❌ المنتج غير موجود');
-        return;
-    }
-    
-    if (product.source === 'server' || product.synced) {
-        alert('ℹ️ هذا المنتج مزامن بالفعل مع السيرفر');
-        return;
-    }
-    
-    if (!confirm('هل تريد مزامنة هذا المنتج مع السيرفر؟')) return;
-    
-    try {
-        const response = await postData('addProduct', {
-            title: product.title,
-            price: product.price,
-            description: product.description,
-            image: product.image,
-            contact: product.contact,
-            merchantId: product.merchantId,
-            featured: product.featured ? 'true' : 'false'
-        });
-        
-        if (response.status === 201) {
-            // تحديث المنتج
-            const productIndex = products.findIndex(p => p.id === productId);
-            if (productIndex !== -1) {
-                const oldId = products[productIndex].id;
-                products[productIndex].id = response.data.productId;
-                products[productIndex].source = 'server';
-                products[productIndex].synced = true;
-                
-                localStorage.setItem('webaidea_products', JSON.stringify(products));
-                
-                // تحديث العرض
-                renderAdsTable();
-                renderProducts();
-                
-                alert(`✅ تم مزامنة المنتج بنجاح!`);
-            }
-        } else {
-            alert('❌ فشلت مزامنة المنتج مع السيرفر');
-        }
-    } catch (error) {
-        console.error('❌ خطأ في مزامنة المنتج:', error);
-        alert('⚠️ حدث خطأ أثناء مزامنة المنتج');
-    }
-}
-
-// دالة جديدة: عرض إشعار
+// ========== دالة عرض إشعار ==========
 function showNotification(message, type = 'info') {
+    // إنشاء العنصر
     const notification = document.createElement('div');
+    notification.className = 'notification';
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -2028,8 +1429,13 @@ function showNotification(message, type = 'info') {
         z-index: 3000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         animation: slideIn 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 400px;
     `;
     
+    // تحديد اللون حسب النوع
     if (type === 'success') {
         notification.style.background = '#4CAF50';
     } else if (type === 'warning') {
@@ -2040,11 +1446,18 @@ function showNotification(message, type = 'info') {
         notification.style.background = '#2196F3';
     }
     
+    // إضافة الأيقونة
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'warning') icon = 'exclamation-triangle';
+    if (type === 'error') icon = 'times-circle';
+    
     notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
-        ${message}
+        <i class="fas fa-${icon}" style="font-size: 1.2rem;"></i>
+        <span>${message}</span>
     `;
     
+    // إضافة العنصر إلى الصفحة
     document.body.appendChild(notification);
     
     // إزالة الإشعار بعد 3 ثواني
@@ -2058,21 +1471,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// إضافة أنماط CSS للرسوم المتحركة
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
-
-// ==================== وظائف مساعدة ====================
+// ========== دوال مساعدة ==========
 
 // إعادة توجيه إلى إنستجرام
 function redirectToInstagram() {
@@ -2085,94 +1484,251 @@ function toggleMenu() {
     navLinks.classList.toggle('active');
 }
 
-// إغلاق النوافذ المنبثقة بالنقر خارجها
+// إغلاق النوافذ بالنقر خارجها
 window.addEventListener('click', function(event) {
     const authModal = document.getElementById('authModal');
     const detailModal = document.getElementById('productDetailModal');
     const merchantModal = document.getElementById('merchantAdModal');
     
-    if (event.target === authModal) {
-        closeModal();
-    }
-    if (event.target === detailModal) {
-        closeDetailModal();
-    }
-    if (event.target === merchantModal) {
-        closeMerchantAdModal();
-    }
+    if (event.target === authModal) closeModal();
+    if (event.target === detailModal) closeDetailModal();
+    if (event.target === merchantModal) closeMerchantAdModal();
 });
 
-// منع إرسال النموذج عند الضغط على Enter
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
-        const activeModal = document.querySelector('.modal[style*="display: flex"]');
-        if (activeModal && !activeModal.contains(event.target)) {
-            event.preventDefault();
+// ========== عرض تفاصيل المنتج ==========
+function showProductDetail(productId) {
+    const product = products.find(p => p.id == productId);
+    if (!product) {
+        showNotification('❌ المنتج غير موجود', 'error');
+        return;
+    }
+    
+    const merchant = users.find(u => u.id == product.merchantId || u.email === product.merchantId);
+    const detailBody = document.getElementById('detailBody');
+    
+    detailBody.innerHTML = `
+        <div class="detail-header">
+            <div class="detail-image">
+                <img src="${product.image || 'https://via.placeholder.com/400x300?text=No+Image'}" 
+                     alt="${product.title}"
+                     onerror="this.src='https://via.placeholder.com/400x300?text=Error+Loading'">
+            </div>
+            <div class="detail-info">
+                <h2 class="detail-title">${product.title || 'بدون عنوان'}</h2>
+                <div class="detail-price">${product.price || 0} ريال عماني</div>
+                
+                ${product.featured ? `
+                    <div class="featured-badge">
+                        <i class="fas fa-crown"></i> إعلان مميز
+                    </div>
+                ` : ''}
+                
+                <div class="detail-merchant">
+                    <i class="fas fa-user-tie"></i> 
+                    <strong>التاجر:</strong> ${merchant ? merchant.name : 'غير معروف'}
+                </div>
+                
+                <div class="detail-contact">
+                    <i class="fas fa-phone"></i> 
+                    <strong>رقم التواصل:</strong> ${product.contact || 'غير متوفر'}
+                </div>
+                
+                <div class="detail-date">
+                    <i class="fas fa-calendar"></i> 
+                    <strong>تاريخ النشر:</strong> ${product.date || 'غير معروف'}
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-description">
+            <h3><i class="fas fa-align-right"></i> وصف المنتج</h3>
+            <p>${product.description || 'لا يوجد وصف للمنتج'}</p>
+        </div>
+        
+        <div class="detail-actions">
+            <button class="btn btn-secondary" onclick="closeDetailModal()">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+            
+            ${currentUser && currentUser.type === 'admin' ? `
+                <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">
+                    <i class="fas fa-trash"></i> حذف المنتج
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    document.getElementById('productDetailModal').style.display = 'flex';
+}
+
+// إغلاق تفاصيل المنتج
+function closeDetailModal() {
+    document.getElementById('productDetailModal').style.display = 'none';
+}
+
+// ========== دوال إضافية للإدارة ==========
+
+// ترقية مستخدم إلى تاجر
+async function makeMerchant(userEmail) {
+    if (!confirm('هل تريد ترقية هذا المستخدم إلى تاجر؟')) return;
+    
+    try {
+        const user = users.find(u => u.email === userEmail);
+        if (user) {
+            user.type = 'merchant';
+            saveLocalData();
+            
+            renderMerchantsTable();
+            renderAccountsTable();
+            
+            showNotification(`✅ تم ترقية ${user.name} إلى تاجر`, 'success');
         }
-    }
-});
-
-// تهيئة البيانات التجريبية عند عدم وجود بيانات
-function initSampleData() {
-    console.log('📝 إنشاء بيانات تجريبية...');
-    
-    if (users.length === 0) {
-        users = [
-            {
-                id: "1",
-                name: "أحمد العماني",
-                email: "ahmed@example.com",
-                password: "123456",
-                type: "merchant",
-                joinDate: "2023-10-01"
-            },
-            {
-                id: "2",
-                name: "سارة البوسعيدي",
-                email: "sara@example.com",
-                password: "123456",
-                type: "user",
-                joinDate: "2023-10-05"
-            }
-        ];
-        localStorage.setItem('webaidea_users', JSON.stringify(users));
-        console.log('✅ تم إنشاء 2 مستخدم تجريبي');
-    }
-    
-    if (products.length === 0) {
-        products = [
-            {
-                id: 1,
-                title: "ساعة ذكية جديدة",
-                description: "ساعة ذكية بشاشة AMOLED ومقاومة للماء، تدعم الاتصال الهاتفي.",
-                price: 199,
-                image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-                merchantId: "1",
-                contact: "+968 1234 5678",
-                date: "2023-10-15",
-                featured: true,
-                source: 'server',
-                synced: true
-            },
-            {
-                id: 2,
-                title: "سماعات بلوتوث عالية الجودة",
-                description: "سماعات لاسلكية بتقنية إلغاء الضوضاء، بطارية تدوم 20 ساعة.",
-                price: 149,
-                image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-                merchantId: "1",
-                contact: "+968 9876 5432",
-                date: "2023-10-20",
-                featured: false,
-                source: 'server',
-                synced: true
-            }
-        ];
-        localStorage.setItem('webaidea_products', JSON.stringify(products));
-        console.log('✅ تم إنشاء 2 منتج تجريبي');
+    } catch (error) {
+        console.error('❌ خطأ في ترقية المستخدم:', error);
+        showNotification('❌ حدث خطأ أثناء ترقية المستخدم', 'error');
     }
 }
 
-console.log('🎯 جاهز للاستخدام!');
-console.log('🔑 بيانات المدير:', 'msdfrrt@gmail.com / Shabib95873061@99');
-console.log('📋 جميع الميزات مفعلة: تسجيل دخول، إدارة كاملة، نشر إعلانات، تحكم كامل');
+// حذف إعلان
+async function removeAd(productId) {
+    if (!confirm('هل تريد حذف هذا الإعلان؟')) return;
+    
+    try {
+        products = products.filter(p => p.id != productId);
+        saveLocalData();
+        
+        renderAdsTable();
+        renderProducts();
+        
+        showNotification('✅ تم حذف الإعلان', 'success');
+    } catch (error) {
+        console.error('❌ خطأ في حذف الإعلان:', error);
+        showNotification('❌ حدث خطأ أثناء حذف الإعلان', 'error');
+    }
+}
+
+// حذف منتج
+function deleteProduct(productId) {
+    removeAd(productId);
+    closeDetailModal();
+}
+
+// جعل إعلان مميزاً
+function makeFeatured(productId) {
+    if (!confirm('هل تريد جعل هذا الإعلان مميزاً؟')) return;
+    
+    const product = products.find(p => p.id == productId);
+    if (product) {
+        product.featured = true;
+        saveLocalData();
+        
+        renderAdsTable();
+        renderProducts();
+        
+        showNotification('✅ تم جعل الإعلان مميزاً', 'success');
+    }
+}
+
+// ========== تهيئة البيانات التجريبية ==========
+async function initSampleData() {
+    console.log('📝 إنشاء بيانات تجريبية...');
+    
+    // بيانات تجريبية للمستخدمين
+    users = [
+        {
+            id: "user_1",
+            name: "أحمد العماني",
+            email: "ahmed@example.com",
+            password: "123456",
+            type: "merchant",
+            joinDate: "2023-10-01",
+            source: 'server',
+            synced: true
+        },
+        {
+            id: "user_2",
+            name: "سارة البوسعيدي",
+            email: "sara@example.com",
+            password: "123456",
+            type: "user",
+            joinDate: "2023-10-05",
+            source: 'server',
+            synced: true
+        }
+    ];
+    
+    // بيانات تجريبية للمنتجات
+    products = [
+        {
+            id: "prod_1",
+            title: "ساعة ذكية جديدة",
+            description: "ساعة ذكية بشاشة AMOLED ومقاومة للماء، تدعم الاتصال الهاتفي.",
+            price: 199,
+            image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            merchantId: "user_1",
+            contact: "+968 1234 5678",
+            date: "2023-10-15",
+            featured: true,
+            source: 'server',
+            synced: true
+        },
+        {
+            id: "prod_2",
+            title: "سماعات بلوتوث عالية الجودة",
+            description: "سماعات لاسلكية بتقنية إلغاء الضوضاء، بطارية تدوم 20 ساعة.",
+            price: 149,
+            image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            merchantId: "user_1",
+            contact: "+968 9876 5432",
+            date: "2023-10-20",
+            featured: false,
+            source: 'server',
+            synced: true
+        }
+    ];
+    
+    // حفظ البيانات
+    saveLocalData();
+    
+    console.log('✅ تم إنشاء بيانات تجريبية:', { users: users.length, products: products.length });
+}
+
+// ========== إضافة أنماط CSS للرسوم المتحركة ==========
+if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// ========== حماية البيانات عند إغلاق المتصفح ==========
+window.addEventListener('beforeunload', function() {
+    console.log('🛡️ حماية البيانات قبل إغلاق الصفحة...');
+    
+    // حفظ نسخة احتياطية إضافية
+    try {
+        localStorage.setItem('webaidea_backup_users', JSON.stringify(users));
+        localStorage.setItem('webaidea_backup_products', JSON.stringify(products));
+        
+        if (currentUser) {
+            localStorage.setItem('webaidea_backup_currentUser', JSON.stringify(currentUser));
+        }
+    } catch (error) {
+        console.error('❌ خطأ في حفظ النسخ الاحتياطية:', error);
+    }
+});
+
+// ========== رسالة بدء التشغيل ==========
+console.log('🎯 موقع ويب أيديا جاهز للعمل - النسخة المعدلة!');
+console.log('🔑 بيانات المدير: msdfrrt@gmail.com / Shabib95873061@99');
+console.log('💾 نظام الحفظ المضمون مفعل');
+console.log('🔄 المزامنة التلقائية مفعلة');
