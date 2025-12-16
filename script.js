@@ -1,7 +1,7 @@
 // إعدادات Firebase
 const firebaseConfig = {
     apiKey: "AKfycbxFuMZK64X-7aI6Ivt2Wv-QKzO1IuQKbRiEW2HK2qLm9RBzlcIgNopO3cmuaXyKeoyGvQ",
-    authDomain: "webaidea.firebaseapp.com",
+    authDomain: "https://docs.google.com/spreadsheets/d/1eNwXAmrzbNUfgt7gUCpgPW-vZ-BeLmTyedcNP-iTpb8/edit?usp=sharing",
     projectId: "webaidea",
     storageBucket: "webaidea.appspot.com",
     messagingSenderId: "123456789",
