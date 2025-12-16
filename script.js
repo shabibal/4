@@ -1,5 +1,5 @@
 // Webaidea Platform - JavaScript with Google Sheets Integration
-const API_URL = 'https://script.google.com/macros/s/AKfycbwjaXIyI_xyI8EV4LjTwKpzlqtUipcWomkjSlLMFrYiS79UgmGSCEU4-jxwpen7J_--Hw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzXuCCGsmDF3pZVsQ644Rrx3RWyqB5G8Z3K_Y1-K8sYTpoOzgFn-pgt5lzuvRZnnyZi7Q/exec';
 
 // متغيرات عامة
 let users = [];
