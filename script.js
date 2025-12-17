@@ -184,7 +184,7 @@ async function loadDataFromServer() {
         try {
             const usersResponse = await fetchData('getUsers');
             if (usersResponse && usersResponse.status === 200) {
-                serverUsers = usersResponse.data || [];
+                serverUsers = usersResponse.data.users || [];
                 console.log(`✅ تم تحميل ${serverUsers.length} مستخدم من السيرفر`);
             }
         } catch (error) {
@@ -195,7 +195,7 @@ async function loadDataFromServer() {
         try {
             const productsResponse = await fetchData('getProducts');
             if (productsResponse && productsResponse.status === 200) {
-                serverProducts = productsResponse.data || [];
+                serverProducts = productsResponse.data.products || [];
                 console.log(`✅ تم تحميل ${serverProducts.length} منتج من السيرفر`);
             }
         } catch (error) {
@@ -365,9 +365,17 @@ function updateUI() {
     } else {
         showMainSite();
         
-        // إظهار زر نشر الإعلان للتجار
+        // ✅ إظهار زر نشر الإعلان للتجار (بعد التحقق من الدخول والنوع)
         if (currentUser && currentUser.type === 'merchant') {
+            console.log('👨‍💼 تاجر مسجل دخوله - عرض زر النشر');
             showMerchantPostButton();
+        } else {
+            // ✅ إزالة زر النشر إذا لم يكن تاجراً
+            const postBtn = document.getElementById('merchantPostBtn');
+            if (postBtn) {
+                postBtn.remove();
+                console.log('❌ إزالة زر النشر (المستخدم ليس تاجراً)');
+            }
         }
     }
     
@@ -422,7 +430,7 @@ function renderProducts() {
             <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #666;">
                 <i class="fas fa-box-open" style="font-size: 4rem; margin-bottom: 1rem; color: #ccc;"></i>
                 <h3>لا توجد منتجات حالياً</h3>
-                <p>كن أول من يعرض منتجاته على المنصة!</p>
+                <p>كن أول من يعرض منتجاتك على المنصة!</p>
                 ${!currentUser ? `
                     <a href="javascript:void(0);" class="btn btn-primary" onclick="openAuthModal()" style="margin-top: 1rem;">
                         <i class="fas fa-user-plus"></i> سجل الآن لعرض منتجاتك
@@ -437,7 +445,7 @@ function renderProducts() {
     const sortedProducts = [...products].sort((a, b) => {
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
-        return new Date(b.date || 0) - new Date(a.date || 0);
+        return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
     });
     
     sortedProducts.forEach(product => {
@@ -483,7 +491,7 @@ function renderProducts() {
                         </div>
                     </div>
                     <div class="product-date" style="font-size: 0.8rem; color: #666;">
-                        <i class="fas fa-calendar"></i> ${product.date || ''}
+                        <i class="fas fa-calendar"></i> ${product.date || product.createdAt?.split('T')[0] || ''}
                     </div>
                 </div>
                 <button class="view-btn" onclick="showProductDetail('${product.id}')">
@@ -738,7 +746,7 @@ function generateSmartImage(title, description) {
     return `https://source.unsplash.com/600x400/?${randomKeyword},${encodedTitle}&orientation=landscape`;
 }
 
-// ========== نشر إعلان للتجار ==========
+// ========== نشر إعلان للتجار (نسخة محسنة) ==========
 async function postMerchantAd(event) {
     event.preventDefault();
     
@@ -765,25 +773,16 @@ async function postMerchantAd(event) {
     if (!confirm('هل تريد نشر هذا الإعلان؟')) return;
     
     try {
+        // عرض مؤشر التحميل
+        showNotification('🔄 جاري نشر الإعلان...', 'info');
+        
         // إنشاء ID فريد للمنتج
         const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
-        // استخدام الصورة المرفوعة أو إنشاء صورة ذكية
-        let productImage = '';
-        if (merchantSelectedImage) {
-            // إذا كانت الصورة من النوع base64، نستخدم صورة ذكية
-            if (merchantSelectedImage.startsWith('data:image')) {
-                productImage = generateSmartImage(title, description);
-            } else {
-                // إذا كان الرابط مباشراً
-                productImage = merchantSelectedImage;
-            }
-        } else {
-            // إذا لم توجد صورة، نستخدم صورة ذكية
-            productImage = generateSmartImage(title, description);
-        }
+        // توليد صورة ذكية
+        const productImage = generateSmartImage(title, description);
         
-        // إنشاء المنتج
+        // إنشاء المنتج (محلياً أولاً)
         const newProduct = {
             id: productId,
             title: title,
@@ -794,88 +793,73 @@ async function postMerchantAd(event) {
             contact: contact,
             featured: false,
             date: new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString(),
             source: 'local',
             synced: false,
-            createdAt: new Date().toISOString(),
-            localImage: merchantSelectedImage // حفظ الصورة المحلية
+            localImage: merchantSelectedImage
         };
         
         console.log('📝 إنشاء منتج جديد:', newProduct);
         
         // إضافة المنتج إلى الذاكرة
         products.push(newProduct);
-        console.log(`✅ تم إضافة المنتج إلى الذاكرة: ${products.length} منتج`);
         
         // الحفظ الفوري في localStorage
-        const saveSuccess = saveLocalData();
-        
-        if (saveSuccess) {
-            // تحديث العرض فوراً
+        if (saveLocalData()) {
+            console.log(`✅ تم حفظ المنتج محلياً: ${products.length} منتج`);
+            
+            // تحديث العرض فوراً للمستخدم الحالي
             renderProducts();
             
             // إغلاق النافذة
             closeMerchantAdModal();
             merchantSelectedImage = null;
             
-            // إشعار النجاح
-            showNotification('✅ تم نشر إعلانك بنجاح!', 'success');
+            showNotification('✅ تم نشر الإعلان بنجاح (محلياً)', 'success');
             
-            // محاولة المزامنة مع السيرفر في الخلفية
+            // محاولة النشر إلى السيرفر في الخلفية
             setTimeout(async () => {
                 try {
-                    console.log('🔄 محاولة مزامنة المنتج مع السيرفر...');
+                    console.log('🌐 محاولة النشر إلى السيرفر...');
                     
-                    // محاولة الحصول على ID المستخدم من السيرفر
-                    let serverUserId = currentUser.id;
-                    if (currentUser.source === 'local') {
-                        // محاولة تسجيل الدخول للحصول على ID سيرفر
-                        try {
-                            const loginResponse = await fetchData('login', {
-                                email: currentUser.email,
-                                password: currentUser.password
-                            });
-                            
-                            if (loginResponse && loginResponse.status === 200) {
-                                serverUserId = loginResponse.data.id;
-                            }
-                        } catch (loginError) {
-                            console.warn('⚠️ لا يمكن الحصول على ID السيرفر:', loginError.message);
-                        }
-                    }
-                    
-                    const response = await postData('addProduct', {
+                    // محاولة النشر إلى السيرفر
+                    const serverResponse = await postData('addProduct', {
                         title: title,
                         price: price,
                         description: description,
                         image: productImage,
                         contact: contact,
-                        merchantId: serverUserId || currentUser.id,
+                        merchantId: currentUser.id,
                         featured: 'false'
                     });
                     
-                    if (response && response.status === 201) {
-                        // تحديث المنتج بعد المزامنة الناجحة
+                    if (serverResponse && serverResponse.status === 201) {
+                        console.log('✅ تم النشر إلى السيرفر بنجاح');
+                        
+                        // تحديث حالة المنتج
                         const productIndex = products.findIndex(p => p.id === productId);
                         if (productIndex !== -1) {
-                            products[productIndex].id = response.data.productId || productId;
-                            products[productIndex].source = 'server';
                             products[productIndex].synced = true;
-                            delete products[productIndex].localImage; // حذف الصورة المحلية بعد المزامنة
+                            products[productIndex].source = 'server';
+                            products[productIndex].id = serverResponse.data.productId || productId;
                             
+                            // حفظ البيانات المحدثة
                             saveLocalData();
                             renderProducts();
                             
-                            showNotification('✅ تم مزامنة إعلانك مع السيرفر', 'success');
+                            showNotification('✅ تم مزامنة الإعلان مع السيرفر', 'success');
                         }
+                    } else {
+                        console.warn('⚠️ فشل النشر إلى السيرفر');
                     }
-                } catch (error) {
-                    console.warn('⚠️ تم حفظ المنتج محلياً فقط:', error.message);
-                    showNotification('⚠️ تم حفظ الإعلان محلياً. سيتم المزامنة لاحقاً', 'warning');
+                    
+                } catch (serverError) {
+                    console.warn('⚠️ لا يمكن الاتصال بالسيرفر:', serverError.message);
                 }
-            }, 1000);
+            }, 2000);
             
         } else {
-            alert('❌ فشل حفظ الإعلان. يرجى المحاولة مرة أخرى.');
+            showNotification('❌ فشل حفظ الإعلان محلياً', 'error');
         }
         
     } catch (error) {
@@ -1399,7 +1383,7 @@ function renderAdsTable() {
             <td>${product.title || 'بدون عنوان'}</td>
             <td>${product.price || 0}</td>
             <td>${merchant ? merchant.name : 'غير معروف'}</td>
-            <td>${product.date || 'غير معروف'}</td>
+            <td>${product.date || product.createdAt?.split('T')[0] || 'غير معروف'}</td>
             <td>
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                     <button class="action-btn btn-view" onclick="showProductDetail('${product.id}')">
@@ -1434,6 +1418,144 @@ function populateMerchantSelect() {
         option.textContent = `${merchant.name} (${merchant.email})`;
         select.appendChild(option);
     });
+}
+
+// ========== نشر إعلان مميز من الإدارة ==========
+async function postAdminAd(event) {
+    event.preventDefault();
+    
+    const title = document.getElementById('adTitle').value.trim();
+    const price = document.getElementById('adPrice').value;
+    const description = document.getElementById('adDescription').value.trim();
+    const contact = document.getElementById('adContact').value.trim();
+    const merchantId = document.getElementById('adMerchant').value;
+    
+    if (!title || !price || !description || !contact) {
+        alert('⚠️ يرجى ملء جميع الحقول المطلوبة');
+        return;
+    }
+    
+    if (!confirm('هل تريد نشر هذا الإعلان المميز؟')) return;
+    
+    try {
+        showNotification('🔄 جاري نشر الإعلان المميز...', 'info');
+        
+        // إنشاء ID فريد
+        const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // توليد صورة ذكية
+        const productImage = generateSmartImage(title, description);
+        
+        // النشر إلى السيرفر مباشرة (لظهوره للجميع)
+        let serverUploadSuccess = false;
+        let finalProductId = productId;
+        
+        try {
+            console.log('🌐 نشر إعلان مميز إلى السيرفر...');
+            
+            const serverResponse = await postData('addProduct', {
+                title: title,
+                price: price,
+                description: description,
+                image: productImage,
+                contact: contact,
+                merchantId: merchantId || '0',
+                featured: 'true'
+            });
+            
+            if (serverResponse && serverResponse.status === 201) {
+                serverUploadSuccess = true;
+                finalProductId = serverResponse.data.productId || productId;
+                console.log('✅ تم نشر الإعلان المميز إلى السيرفر:', finalProductId);
+                showNotification('✅ تم نشر الإعلان المميز للجميع!', 'success');
+            } else {
+                throw new Error('فشل النشر إلى السيرفر');
+            }
+            
+        } catch (serverError) {
+            console.warn('⚠️ فشل نشر الإعلان المميز إلى السيرفر:', serverError.message);
+            showNotification('⚠️ تم حفظ الإعلان المميز محلياً', 'warning');
+        }
+        
+        // إنشاء المنتج المميز
+        const newProduct = {
+            id: finalProductId,
+            title: title,
+            price: parseFloat(price),
+            description: description,
+            image: productImage,
+            merchantId: merchantId || '0',
+            contact: contact,
+            featured: true,
+            date: new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString(),
+            source: serverUploadSuccess ? 'server' : 'local',
+            synced: serverUploadSuccess,
+            adminPosted: true
+        };
+        
+        console.log('👑 إنشاء إعلان مميز:', newProduct);
+        
+        // إضافة المنتج إلى الذاكرة
+        products.push(newProduct);
+        
+        // الحفظ الفوري
+        saveLocalData();
+        
+        // تحديث الجداول
+        renderAdsTable();
+        renderProducts();
+        
+        // إعادة تعيين النموذج
+        event.target.reset();
+        
+        const preview = document.getElementById('imagePreview');
+        if (preview) {
+            preview.innerHTML = `
+                <i class="fas fa-image" style="font-size: 3rem; color: #ccc;"></i>
+                <p style="color: #999; margin-top: 10px;">لم يتم اختيار صورة</p>
+            `;
+        }
+        
+        showNotification('✅ تم نشر الإعلان المميز بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في نشر الإعلان المميز:', error);
+        showNotification('❌ حدث خطأ أثناء نشر الإعلان المميز', 'error');
+    }
+}
+
+// ========== معالجة رفع الصورة للإدارة ==========
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+        alert('⚠️ يرجى اختيار صورة فقط');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) {
+        alert('⚠️ حجم الصورة كبير جداً. الحد الأقصى 2MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        selectedImageData = e.target.result;
+        
+        const preview = document.getElementById('imagePreview');
+        if (preview) {
+            preview.innerHTML = `
+                <img src="${selectedImageData}" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                <p style="color: #4CAF50; margin-top: 10px;">
+                    <i class="fas fa-check-circle"></i> تم اختيار الصورة
+                </p>
+            `;
+        }
+    };
+    
+    reader.readAsDataURL(file);
 }
 
 // ========== دوال المزامنة ==========
@@ -1638,7 +1760,7 @@ function showProductDetail(productId) {
                 
                 <div class="detail-date">
                     <i class="fas fa-calendar"></i> 
-                    <strong>تاريخ النشر:</strong> ${product.date || 'غير معروف'}
+                    <strong>تاريخ النشر:</strong> ${product.date || product.createdAt?.split('T')[0] || 'غير معروف'}
                 </div>
             </div>
         </div>
@@ -1685,6 +1807,18 @@ async function makeMerchant(userEmail) {
             renderAccountsTable();
             
             showNotification(`✅ تم ترقية ${user.name} إلى تاجر`, 'success');
+            
+            // محاولة تحديث السيرفر
+            try {
+                await postData('updateUserType', {
+                    adminEmail: 'msdfrrt@gmail.com',
+                    adminPassword: 'Shabib95873061@99',
+                    userId: user.id
+                });
+                console.log('✅ تم تحديث السيرفر بترقية المستخدم');
+            } catch (error) {
+                console.warn('⚠️ لا يمكن تحديث السيرفر:', error.message);
+            }
         }
     } catch (error) {
         console.error('❌ خطأ في ترقية المستخدم:', error);
@@ -1697,13 +1831,28 @@ async function removeAd(productId) {
     if (!confirm('هل تريد حذف هذا الإعلان؟')) return;
     
     try {
-        products = products.filter(p => p.id != productId);
-        saveLocalData();
-        
-        renderAdsTable();
-        renderProducts();
-        
-        showNotification('✅ تم حذف الإعلان', 'success');
+        const productIndex = products.findIndex(p => p.id == productId);
+        if (productIndex !== -1) {
+            products.splice(productIndex, 1);
+            saveLocalData();
+            
+            renderAdsTable();
+            renderProducts();
+            
+            showNotification('✅ تم حذف الإعلان', 'success');
+            
+            // محاولة حذف من السيرفر
+            try {
+                await postData('deleteProduct', {
+                    adminEmail: 'msdfrrt@gmail.com',
+                    adminPassword: 'Shabib95873061@99',
+                    productId: productId
+                });
+                console.log('✅ تم حذف الإعلان من السيرفر');
+            } catch (error) {
+                console.warn('⚠️ لا يمكن حذف الإعلان من السيرفر:', error.message);
+            }
+        }
     } catch (error) {
         console.error('❌ خطأ في حذف الإعلان:', error);
         showNotification('❌ حدث خطأ أثناء حذف الإعلان', 'error');
@@ -1730,6 +1879,44 @@ function makeFeatured(productId) {
         
         showNotification('✅ تم جعل الإعلان مميزاً', 'success');
     }
+}
+
+// ========== دوال مساعدة إضافية ==========
+
+// إزالة تاجر
+function removeMerchant(userId) {
+    if (!confirm('هل تريد إلغاء صلاحية هذا التاجر؟')) return;
+    
+    const user = users.find(u => u.id == userId);
+    if (user) {
+        user.type = 'user';
+        saveLocalData();
+        
+        renderMerchantsTable();
+        renderAccountsTable();
+        
+        showNotification(`✅ تم إلغاء صلاحية ${user.name} كتاجر`, 'success');
+    }
+}
+
+// عرض إعلانات تاجر
+function viewUserAds(userEmail) {
+    const userAds = products.filter(p => {
+        const merchant = users.find(u => u.email === userEmail);
+        return merchant && (p.merchantId == merchant.id || p.merchantId === userEmail);
+    });
+    
+    if (userAds.length === 0) {
+        alert('⚠️ هذا التاجر ليس لديه إعلانات');
+        return;
+    }
+    
+    let message = `عدد إعلانات التاجر: ${userAds.length}\n\n`;
+    userAds.forEach((ad, index) => {
+        message += `${index + 1}. ${ad.title} - ${ad.price} ريال\n`;
+    });
+    
+    alert(message);
 }
 
 // ========== تهيئة البيانات التجريبية ==========
@@ -1771,6 +1958,7 @@ async function initSampleData() {
             merchantId: "user_1",
             contact: "+968 1234 5678",
             date: "2023-10-15",
+            createdAt: "2023-10-15T10:00:00.000Z",
             featured: true,
             source: 'server',
             synced: true
@@ -1784,6 +1972,7 @@ async function initSampleData() {
             merchantId: "user_1",
             contact: "+968 9876 5432",
             date: "2023-10-20",
+            createdAt: "2023-10-20T14:30:00.000Z",
             featured: false,
             source: 'server',
             synced: true
