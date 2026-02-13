@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلة التسوق - متجر الإلكترونيات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">متجر<span>التقنية</span></a>
+            
+            <div class="nav-links">
+                <a href="index.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="products.html"><i class="fas fa-box"></i> المنتجات</a>
+                <a href="cart.html" class="active"><i class="fas fa-shopping-cart"></i> السلة 
+                    <span class="cart-count">0</span>
+                </a>
+                <a href="admin.html" class="admin-link"><i class="fas fa-cog"></i> الإدارة</a>
+            </div>
+            
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- صفحة سلة التسوق -->
+    <section class="cart-section">
+        <div class="container">
+            <h1 class="page-title">سلة التسوق</h1>
+            
+            <div class="cart-container">
+                <div class="cart-items-container">
+                    <div id="cart-items">
+                        <!-- سيتم ملء هذا القسم بـ JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="cart-summary">
+                    <h2>ملخص الطلب</h2>
+                    <div class="summary-row">
+                        <span>المجموع الفرعي:</span>
+                        <span id="cart-subtotal">0.00 ر.ع</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>الشحن:</span>
+                        <span id="cart-shipping">0.00 ر.ع</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>الإجمالي:</span>
+                        <span id="cart-total">0.00 ر.ع</span>
+                    </div>
+                    <button class="btn checkout-btn" onclick="proceedToCheckout()">
+                        <i class="fas fa-credit-card"></i> إتمام الطلب
+                    </button>
+                    <a href="products.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> متابعة التسوق
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>متجر التقنية</h3>
+                    <p>متجر متخصص في بيع أحدث الأجهزة الإلكترونية بجودة عالية وأسعار تنافسية.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>روابط سريعة</h3>
+                    <a href="index.html">الرئيسية</a>
+                    <a href="products.html">المنتجات</a>
+                    <a href="cart.html">سلة التسوق</a>
+                </div>
+                <div class="footer-section">
+                    <h3>التواصل</h3>
+                    <p><i class="fas fa-phone"></i> +966 55 123 4567</p>
+                    <p><i class="fas fa-envelope"></i> info@tech-store.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 متجر التقنية. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

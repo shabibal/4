@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المنتجات - متجر الإلكترونيات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">متجر<span>التقنية</span></a>
+            
+            <div class="nav-links">
+                <a href="index.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="products.html" class="active"><i class="fas fa-box"></i> المنتجات</a>
+                <a href="cart.html"><i class="fas fa-shopping-cart"></i> السلة 
+                    <span class="cart-count">0</span>
+                </a>
+                <a href="admin.html" class="admin-link"><i class="fas fa-cog"></i> الإدارة</a>
+            </div>
+            
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- صفحة المنتجات -->
+    <section class="products-section">
+        <div class="container">
+            <h1 class="page-title">جميع المنتجات</h1>
+            
+            <div class="products-grid" id="all-products">
+                <!-- سيتم ملء هذا القسم بـ JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>متجر التقنية</h3>
+                    <p>متجر متخصص في بيع أحدث الأجهزة الإلكترونية بجودة عالية وأسعار تنافسية.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>روابط سريعة</h3>
+                    <a href="index.html">الرئيسية</a>
+                    <a href="products.html">المنتجات</a>
+                    <a href="cart.html">سلة التسوق</a>
+                </div>
+                <div class="footer-section">
+                    <h3>التواصل</h3>
+                    <p><i class="fas fa-phone"></i> +966 55 123 4567</p>
+                    <p><i class="fas fa-envelope"></i> info@tech-store.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 متجر التقنية. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

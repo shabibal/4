@@ -3,477 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webaidea - سوق التجار الإلكتروني</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Almarai:wght@300;400;700&display=swap" rel="stylesheet">
+    <title>متجر الإلكترونيات - الرئيسية</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        /* إضافة الأنماط من شعار الفنان */
-        .artist-logo-container {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            color: white;
-            padding: 50px 20px;
-            text-align: center;
-            border-radius: 0 0 30px 30px;
-            margin-bottom: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .artist-logo-container .logo-icon {
-            font-size: 5rem;
-            margin-bottom: 20px;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        .artist-logo-container .logo-title {
-            font-size: 3.5rem;
-            font-weight: 900;
-            margin-bottom: 10px;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .artist-logo-container .logo-subtitle {
-            font-size: 1.8rem;
-            color: #ffd700;
-            margin-bottom: 25px;
-            font-weight: 600;
-        }
-
-        .artist-logo-container .tagline {
-            font-size: 1.5rem;
-            margin-bottom: 35px;
-            color: #e0e0ff;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            padding-bottom: 15px;
-            display: inline-block;
-        }
-
-        .artist-logo-container .features {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .artist-logo-container .feature {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            flex: 1 1 250px;
-            max-width: 250px;
-            border: 1px solid rgba(255,255,255,0.2);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .artist-logo-container .feature:hover {
-            background: rgba(255,255,255,0.25);
-            transform: translateY(-5px);
-        }
-
-        .artist-logo-container .feature h3 {
-            color: #ffd700;
-            margin-bottom: 10px;
-            font-size: 1.3rem;
-        }
-
-        .artist-logo-container .feature p {
-            color: #e0e0ff;
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }
-
-        .artist-logo-container .responsive-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 50px;
-            margin-top: 25px;
-            font-weight: bold;
-            border: 2px solid rgba(255,255,255,0.3);
-        }
-
-        /* تصغير الشعار على الجوال */
-        @media (max-width: 768px) {
-            .artist-logo-container {
-                padding: 40px 15px;
-                border-radius: 0 0 20px 20px;
-            }
-            
-            .artist-logo-container .logo-icon {
-                font-size: 4rem;
-            }
-            
-            .artist-logo-container .logo-title {
-                font-size: 2.5rem;
-            }
-            
-            .artist-logo-container .logo-subtitle {
-                font-size: 1.5rem;
-            }
-            
-            .artist-logo-container .tagline {
-                font-size: 1.2rem;
-            }
-            
-            .artist-logo-container .feature {
-                flex: 1 1 100%;
-                max-width: 100%;
-                margin-bottom: 15px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .artist-logo-container .logo-title {
-                font-size: 2rem;
-            }
-            
-            .artist-logo-container .logo-subtitle {
-                font-size: 1.2rem;
-            }
-            
-            .artist-logo-container .tagline {
-                font-size: 1rem;
-            }
-            
-            .artist-logo-container .logo-icon {
-                font-size: 3.5rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- شعار الفنان المخصص (مدمج من المشروع الأول) -->
-    <div class="artist-logo-container">
-        <div class="logo-icon">
-            <i class="fas fa-globe-americas"></i>
-        </div>
-        <h1 class="logo-title">Webaidea</h1>
-        <h2 class="logo-subtitle">أفكار إلكترونية مبتكرة</h2>
-        <div class="tagline">
-           
-        </div>
-        <div class="features">
-            <div class="feature">
-                <h3>🌐 المواقع الإلكترونية</h3>
-                <p>تصميم وتطوير مواقع متكاملة تعبر عن هوية علامتك التجارية</p>
-            </div>
-            <div class="feature">
-                <h3>📈 النمو والتطور</h3>
-                <p>نواكب أحدث التقنيات لضمان نمو وتطور حضورك الرقمي</p>
-            </div>
-            <div class="feature">
-                <h3>✨ الإبداع والتقنية</h3>
-                <p>نقدم حلولاً إبداعية تقنية تلبي احتياجات العصر الرقمي</p>
-            </div>
-        </div>
-        <div class="responsive-badge">
-            <i class="fas fa-mobile-alt"></i> تصميم متجاوب لكل الأجهزة
-        </div>
-    </div>
-
-    <!-- شريط التنقل العلوي -->
+    <!-- شريط التنقل -->
     <nav class="navbar">
-        <div class="nav-container">
-            <a href="#hero" class="logo">
-                <i class="fas fa-globe-americas"></i> Webaidea
-            </a>
+        <div class="container">
+            <a href="index.html" class="logo">متجر<span>التقنية</span></a>
+            
             <div class="nav-links">
-                <a href="#hero">الرئيسية</a>
-                <a href="#products">المنتجات</a>
-                <a href="#how-it-works">كيفية العمل</a>
-                <a href="javascript:void(0);" class="btn-contact" onclick="redirectToInstagram()">
-                    <i class="fas fa-bullhorn"></i> نشر إعلانك
+                <a href="index.html" class="active"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="products.html"><i class="fas fa-box"></i> المنتجات</a>
+                <a href="cart.html"><i class="fas fa-shopping-cart"></i> السلة 
+                    <span class="cart-count">0</span>
                 </a>
-                <!-- زر تسجيل الدخول الرئيسي -->
-                <a href="javascript:void(0);" class="login-btn" onclick="openAuthModal()">
-                    <i class="fas fa-user"></i> تسجيل دخول
-                </a>
-                <!-- زر دخول الإدارة -->
-                <a href="javascript:void(0);" id="adminDashboardBtn" class="admin-dashboard-btn" style="display: none;" onclick="showAdminPanel()">
-                    <i class="fas fa-cogs"></i> لوحة الإدارة
-                </a>
-                <!-- زر الخروج -->
-                <a href="javascript:void(0);" id="logoutBtn" class="logout-btn" style="display: none;" onclick="logoutUser()">
-                    <i class="fas fa-sign-out-alt"></i> تسجيل خروج
-                </a>
+                <a href="admin.html" class="admin-link"><i class="fas fa-cog"></i> الإدارة</a>
             </div>
-            <button class="menu-toggle" onclick="toggleMenu()">
+            
+            <button class="menu-toggle">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
     </nav>
 
-    <!-- نموذج تسجيل الدخول / تسجيل جديد -->
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">تسجيل الدخول</h2>
-            <form id="authForm" onsubmit="handleAuth(event)">
-                <div class="form-group">
-                    <label for="email">البريد الإلكتروني</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">كلمة المرور</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                <div class="form-group" id="nameField" style="display: none;">
-                    <label for="name">الاسم الكامل</label>
-                    <input type="text" id="name" name="name">
-                </div>
-                <button type="submit" class="btn-submit" id="submitBtn">دخول</button>
-            </form>
-            <p class="switch-mode">
-                <span id="switchText">ليس لديك حساب؟</span>
-                <a href="javascript:void(0);" onclick="switchAuthMode()" id="switchLink">انشاء حساب جديد</a>
-            </p>
-        </div>
-    </div>
-
-    <!-- لوحة الإدارة -->
-    <div id="adminPanel" class="admin-panel" style="display: none;">
-        <div class="admin-header">
-            <div class="admin-header-left">
-                <button class="btn-back" onclick="goToMainSite()" title="العودة للقائمة الرئيسية">
-                    <i class="fas fa-arrow-right"></i> العودة للرئيسية
-                </button>
-                <h2><i class="fas fa-cogs"></i> لوحة تحكم الإدارة</h2>
+    <!-- الهيرو -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>متجر التقنية الرائد</h1>
+                <p>اكتشف أحدث الأجهزة الإلكترونية بأفضل الأسعار</p>
+                <a href="products.html" class="btn">تصفح المنتجات</a>
             </div>
-            <button class="btn-logout" onclick="logoutAdmin()">
-                تسجيل خروج <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-        <div class="admin-tabs">
-            <button class="tab-link active" onclick="openAdminTab(event, 'tabMerchants')">التجار</button>
-            <button class="tab-link" onclick="openAdminTab(event, 'tabAccounts')">الحسابات</button>
-            <button class="tab-link" onclick="openAdminTab(event, 'tabAds')">الإعلانات</button>
-            <button class="tab-link" onclick="openAdminTab(event, 'tabPostAd')">نشر إعلان</button>
-        </div>
-        <div class="admin-content">
-            <!-- تبويب التجار -->
-            <div id="tabMerchants" class="tab-content active-tab">
-                <h3><i class="fas fa-user-tie"></i> قائمة التجار المعتمدين</h3>
-                <p>الحسابات التي يمكنها نشر الإعلانات.</p>
-                <div class="search-box">
-                    <input type="text" id="searchMerchant" placeholder="البحث عن تاجر بالبريد أو الاسم..." onkeyup="searchTable('merchantsTable', this.value)">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="table-container">
-                    <table id="merchantsTable">
-                        <thead>
-                            <tr><th>الاسم</th><th>البريد</th><th>تاريخ الانضمام</th><th>عدد الإعلانات</th><th>الإجراءات</th></tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1550009158-9ebf69173e03?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="إلكترونيات">
             </div>
-            <!-- تبويب الحسابات -->
-            <div id="tabAccounts" class="tab-content">
-                <h3><i class="fas fa-users"></i> جميع الحسابات المسجلة</h3>
-                <p>يمكنك ترقية أي حساب إلى "تاجر".</p>
-                <div class="search-box">
-                    <input type="text" id="searchAccount" placeholder="البحث عن حساب بالبريد..." onkeyup="searchTable('accountsTable', this.value)">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="table-container">
-                    <table id="accountsTable">
-                        <thead>
-                            <tr><th>الاسم</th><th>البريد</th><th>نوع الحساب</th><th>تاريخ التسجيل</th><th>الإجراءات</th></tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- تبويب الإعلانات -->
-            <div id="tabAds" class="tab-content">
-                <h3><i class="fas fa-list-alt"></i> جميع الإعلانات المنشورة</h3>
-                <p>عرض جميع المنتجات المعروضة في الموقع.</p>
-                <div class="search-box">
-                    <input type="text" id="searchAd" placeholder="البحث في الإعلانات..." onkeyup="searchTable('adsTable', this.value)">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="table-container">
-                    <table id="adsTable">
-                        <thead>
-                            <tr><th>صورة</th><th>اسم المنتج</th><th>السعر (ريال)</th><th>التاجر</th><th>تاريخ النشر</th><th>الإجراءات</th></tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- تبويب نشر إعلان جديد -->
-            <div id="tabPostAd" class="tab-content">
-                <h3><i class="fas fa-plus-circle"></i> نشر إعلان جديد (مميز)</h3>
-                <p class="special-notice"><i class="fas fa-crown"></i> هذا الإعلان سيكون بارزًا ومميزًا في الصفحة الرئيسية.</p>
-                
-                <form id="adminAdForm" onsubmit="postAdminAd(event)">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="adTitle">عنوان المنتج *</label>
-                            <input type="text" id="adTitle" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="adPrice">السعر (ريال) *</label>
-                            <input type="number" id="adPrice" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="adDescription">وصف المنتج *</label>
-                        <textarea id="adDescription" rows="4" required></textarea>
-                    </div>
-                    
-                    <!-- حقل رفع الصورة -->
-                    <div class="form-group">
-                        <label for="productImage">صورة المنتج *</label>
-                        <div class="image-upload-container">
-                            <input type="file" id="productImage" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-                            <button type="button" class="upload-btn" onclick="document.getElementById('productImage').click()">
-                                <i class="fas fa-upload"></i> اختر صورة
-                            </button>
-                            <div class="image-preview" id="imagePreview">
-                                <i class="fas fa-image" style="font-size: 3rem; color: #ccc;"></i>
-                                <p style="color: #999; margin-top: 10px;">لم يتم اختيار صورة</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="adContact">رقم التواصل *</label>
-                        <input type="tel" id="adContact" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="adMerchant">الناشر (التاجر)</label>
-                        <select id="adMerchant">
-                            <option value="">-- اختر تاجر --</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> نشر الإعلان المميز</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- قسم الهيرو -->
-    <header class="hero" id="hero">
-        <div class="hero-content">
-            <h1>سوق <span class="highlight">ويب أيديا</span> للإعلانات</h1>
-            <p>المنصة الأمثل للتجار لعرض منتجاتهم ووصولها لأكبر شريحة من العملاء. انشر إعلانك بكل سهولة بعد الموافقة الإدارية.</p>
-            <div class="hero-buttons">
-                <a href="#products" class="btn btn-primary">استعرض المنتجات</a>
-                <a href="javascript:void(0);" class="btn btn-secondary" onclick="redirectToInstagram()">
-                    اطلع نشر إعلان <i class="fab fa-instagram"></i>
-                </a>
-                <a href="javascript:void(0);" class="btn btn-primary" onclick="openAuthModal()">
-                    <i class="fas fa-user-plus"></i> انشاء حساب جديد
-                </a>
-            </div>
-        </div>
-        <div class="hero-image">
-            <!-- تغيير الصورة هنا -->
-            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="منصة ويب أيديا">
-        </div>
-    </header>
-
-    <!-- قسم المنتجات -->
-    <section id="products" class="products-section">
-        <div class="section-header">
-            <h2>الإعلانات المنشورة</h2>
-            <p>استعرض أحدث المنتجات المعروضة من قبل تجارنا المعتمدين.</p>
-        </div>
-        <div class="products-container" id="productsContainer">
-            <!-- المنتجات سيتم إضافتها بواسطة JavaScript -->
         </div>
     </section>
 
-    <!-- قسم كيفية العمل -->
-    <section id="how-it-works" class="how-section">
-        <h2>كيف تعمل المنصة؟</h2>
-        <div class="steps">
-            <div class="step">
-                <div class="step-icon">1</div>
-                <h3>انشاء حساب</h3>
-                <p>سجل في الموقع ببياناتك الأساسية.</p>
-                <a href="javascript:void(0);" onclick="openAuthModal()" style="color: #4361ee; font-weight: 600; margin-top: 10px; display: inline-block;">
-                    <i class="fas fa-user-plus"></i> انشاء حساب الآن
-                </a>
+    <!-- قسم المنتجات المميزة -->
+    <section class="featured-products">
+        <div class="container">
+            <h2 class="section-title">منتجات مميزة</h2>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="ساعة ذكية">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">ساعة ذكية</h3>
+                        <p class="product-description">ساعة ذكية متطورة مع شاشة لمس ومقاومة للماء</p>
+                        <div class="product-price">299 ر.س</div>
+                        <a href="product-details.html?id=1" class="btn">عرض التفاصيل</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="سماعات لاسلكية">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">سماعات لاسلكية</h3>
+                        <p class="product-description">سماعات بلوتوث عالية الجودة مع عزل للضوضاء</p>
+                        <div class="product-price">149 ر.س</div>
+                        <a href="product-details.html?id=2" class="btn">عرض التفاصيل</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="هاتف ذكي">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">هاتف ذكي</h3>
+                        <p class="product-description">هاتف ذكي بشاشة كبيرة وذاكرة 128 جيجابايت</p>
+                        <div class="product-price">699 ر.س</div>
+                        <a href="product-details.html?id=3" class="btn">عرض التفاصيل</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="لابتوب">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">لابتوب</h3>
+                        <p class="product-description">لابتوب قوي بمعالج i7 وذاكرة 16 جيجابايت</p>
+                        <div class="product-price">999 ر.س</div>
+                        <a href="product-details.html?id=4" class="btn">عرض التفاصيل</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="كاميرا احترافية">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">كاميرا احترافية</h3>
+                        <p class="product-description">كاميرا DSLR مع عدستين وذاكرة 64 جيجابايت</p>
+                        <div class="product-price">799 ر.س</div>
+                        <a href="product-details.html?id=5" class="btn">عرض التفاصيل</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="تابلت">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">تابلت</h3>
+                        <p class="product-description">تابلت بشاشة 10 بوصة وذاكرة 64 جيجابايت</p>
+                        <div class="product-price">399 ر.س</div>
+                        <a href="product-details.html?id=6" class="btn">عرض التفاصيل</a>
+                    </div>
+                </div>
             </div>
-            <div class="step">
-                <div class="step-icon">2</div>
-                <h3>التواصل لطلب النشر</h3>
-                <p>اضغط على زر "التواصل لنشر إعلانك" للتواصل مع الإدارة عبر الإنستجرام.</p>
-            </div>
-            <div class="step">
-                <div class="step-icon">3</div>
-                <h3>انتظار الموافقة</h3>
-                <p>ستقوم الإدارة بمراجعة طلبك وترقية حسابك إلى "تاجر".</p>
-            </div>
-            <div class="step">
-                <div class="step-icon">4</div>
-                <h3>بدء النشر</h3>
-                <p>بعد الموافقة، يمكنك تسجيل الدخول وإضافة منتجاتك وعرضها للجميع.</p>
+        </div>
+    </section>
+
+    <!-- المميزات -->
+    <section class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature">
+                    <i class="fas fa-shipping-fast"></i>
+                    <h3>شحن سريع</h3>
+                    <p>توصيل خلال 24-48 ساعة</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>ضمان الجودة</h3>
+                    <p>ضمان لمدة عامين على جميع المنتجات</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-headset"></i>
+                    <h3>دعم فني</h3>
+                    <p>دعم فني على مدار الساعة</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-credit-card"></i>
+                    <h3>دفع آمن</h3>
+                    <p>أنظمة دفع آمنة ومتعددة</p>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- الفوتر -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-logo">
-                <i class="fas fa-globe-americas"></i> Webaidea
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>متجر التقنية</h3>
+                    <p>متجر متخصص في بيع أحدث الأجهزة الإلكترونية بجودة عالية وأسعار تنافسية.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>روابط سريعة</h3>
+                    <a href="index.html">الرئيسية</a>
+                    <a href="products.html">المنتجات</a>
+                    <a href="cart.html">سلة التسوق</a>
+                </div>
+                <div class="footer-section">
+                    <h3>التواصل</h3>
+                    <p><i class="fas fa-phone"></i> +966 55 123 4567</p>
+                    <p><i class="fas fa-envelope"></i> info@tech-store.com</p>
+                </div>
             </div>
-            <p>منصة رائدة لتجارة إلكترونية آمنة ومنظمة. نربط التجار بالعملاء بثقة وسهولة.</p>
-            <div class="footer-links">
-                <a href="javascript:void(0);" onclick="redirectToInstagram()"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-facebook"></i></a>
+            <div class="copyright">
+                <p>© 2024 متجر التقنية. جميع الحقوق محفوظة.</p>
             </div>
-            <p class="copyright">© 2026 ويب أيديا. جميع الحقوق محفوظة.</p>
         </div>
     </footer>
 
-    <!-- نافذة عرض المنتج بالتفصيل -->
-    <div id="productDetailModal" class="modal detail-modal">
-        <div class="modal-content detail-content">
-            <span class="close-detail" onclick="closeDetailModal()">&times;</span>
-            <div class="detail-body" id="detailBody"></div>
-        </div>
-    </div>
-
     <script src="script.js"></script>
-    <script>
-        // تأثير بسيط لعناصر الميزات في الشعار الفني
-        document.addEventListener('DOMContentLoaded', function() {
-            const features = document.querySelectorAll('.artist-logo-container .feature');
-            features.forEach((feature, index) => {
-                feature.style.opacity = '0';
-                feature.style.transform = 'translateY(20px)';
-                
-                setTimeout(() => {
-                    feature.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                    feature.style.opacity = '1';
-                    feature.style.transform = 'translateY(0)';
-                }, 300 + (index * 200));
-            });
-            
-            // تحسين تجربة الجوال
-            if (window.innerWidth <= 768) {
-                document.querySelector('.hero').scrollIntoView({behavior: 'smooth'});
-            }
-        });
-    </script>
 </body>
 </html>
